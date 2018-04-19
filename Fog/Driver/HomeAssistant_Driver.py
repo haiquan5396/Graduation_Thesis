@@ -1,6 +1,4 @@
-import paho.mqtt.client as mqtt
 import json
-import configparser
 import requests
 import hashlib
 import time
@@ -8,9 +6,9 @@ from Fog.Driver.Driver_Base import Driver
 
 
 class HomeAssistant(Driver):
-    def __init__(self, config_path):
+    def __init__(self, config_path, mode):
         self.now_info = []
-        Driver.__init__(self,config_path)
+        Driver.__init__(self, config_path, mode)
 
     def get_states(self):
         print('Get state of all things')
@@ -153,6 +151,7 @@ class HomeAssistant(Driver):
             print('Type are not support')
 
 if __name__ == '__main__':
-    config = "config/homeassistant.ini"
-    home_assistant = HomeAssistant(config)
+    CONFIG_PATH = "config/homeassistant.ini"
+    MODE = 'PUSH'
+    home_assistant = HomeAssistant(CONFIG_PATH, MODE)
     home_assistant.run()

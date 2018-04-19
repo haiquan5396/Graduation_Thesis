@@ -10,6 +10,7 @@ from kombu.utils.compat import nested
 
 BROKER_CLOUD = "localhost"
 TIME_DELETE_PLATFORM = 60
+MODE = 'PUSH' # or PUSH or PULL
 
 dbconfig = {
   "database": "Registry_DB",
@@ -92,7 +93,7 @@ def update_changes_to_db(new_info, platform_id):
                         or now_thing['thing_type'] != new_thing['thing_type']\
                         or now_thing['location'] != new_thing['location']):
 
-                    cursor_1.execute("""UPDATE Thing SET thing_name=%s, thing_type=%s, location=%s, thing_status  WHERE thing_global_id=%s""",
+                    cursor_1.execute("""UPDATE Thing SET thing_name=%s, thing_type=%s, location=%s, thing_status=%s  WHERE thing_global_id=%s""",
                                      (new_thing["thing_name"], new_thing["thing_type"], new_thing["location"], 'active', now_thing["thing_global_id"]))
                 if now_thing['thing_status'] == 'inactive':
                     cursor_1.execute("""UPDATE Thing SET thing_status=%s  WHERE thing_global_id=%s""", ('active', now_thing["thing_global_id"]))
@@ -481,60 +482,64 @@ def api_get_things(body, message):
         )
 
 
-# def api_get_thing_by_global_id(body, message):
-#     print('Get Thing by thing_global_id')
-#     reply_to = json.loads(body)['reply_to']
-#     thing_global_id = json.loads(body)['thing_global_id']
-#
-#     things = get_thing_by_global_id(thing_global_id)
-#
-#     message_response ={
-#         'things': things
-#     }
-#     producer_connection.ensure_connection()
-#     with Producer(producer_connection) as producer:
-#         producer.publish(
-#             json.dumps(message_response),
-#             exchange=exchange.name,
-#             routing_key=reply_to,
-#             retry=True
-#         )
-#
-#
-# def api_get_thing_by_platform_id(body, message):
-#     print('Get Thing by platform_id')
-#     reply_to = json.loads(body)['reply_to']
-#     platform_id = json.loads(body)['platform_id']
-#     thing_status = json.loads(body)['thing_status']
-#     item_status = json.loads(body)['item_status']
-#     things = get_things_by_platform_id(platform_id, thing_status, item_status)
-#
-#     message_response = {
-#         'things': things
-#     }
-#     producer_connection.ensure_connection()
-#     with Producer(producer_connection) as producer:
-#         producer.publish(
-#             json.dumps(message_response),
-#             exchange=exchange.name,
-#             routing_key=reply_to,
-#             retry=True
-#         )
+def api_get_thing_by_global_id(body, message):
+    print('Get Thing by thing_global_id')
+    reply_to = json.loads(body)['reply_to']
+    thing_global_id = json.loads(body)['thing_global_id']
+
+    things = get_thing_by_global_id(thing_global_id)
+
+    message_response ={
+        'things': things
+    }
+    producer_connection.ensure_connection()
+    with Producer(producer_connection) as producer:
+        producer.publish(
+            json.dumps(message_response),
+            exchange=exchange.name,
+            routing_key=reply_to,
+            retry=True
+        )
+
+
+def api_get_things_by_platform_id(body, message):
+    print('Get Thing by platform_id')
+    reply_to = json.loads(body)['reply_to']
+    platform_id = json.loads(body)['platform_id']
+    thing_status = json.loads(body)['thing_status']
+    item_status = json.loads(body)['item_status']
+    things = get_things_by_platform_id(platform_id, thing_status, item_status)
+
+    message_response = {
+        'things': things
+    }
+    producer_connection.ensure_connection()
+    with Producer(producer_connection) as producer:
+        producer.publish(
+            json.dumps(message_response),
+            exchange=exchange.name,
+            routing_key=reply_to,
+            retry=True
+        )
 
 
 queue_get_things = Queue(name='registry.request.api_get_things', exchange=exchange, routing_key='registry.request.api_get_things')
 queue_get_list_platforms = Queue(name='registry.request.api_get_list_platforms', exchange=exchange, routing_key='registry.request.api_get_list_platforms')
 queue_add_platform = Queue(name='registry.request.api_add_platform', exchange=exchange, routing_key='registry.request.api_add_platform')
 queue_check_config = Queue(name='driver.response.registry.api_check_configuration_changes', exchange=exchange, routing_key='driver.response.registry.api_check_configuration_changes')
-# queue_get_thing_by_global_id = Queue(name='registry.request.api_get_thing_by_global_id', exchange=exchange, routing_key='registry.request.api_get_thing_by_global_id')
-# queue_get_thing_by_platform_id = Queue(name='registry.request.api_get_things_by_platform_id', exchange=exchange, routing_key='registry.request.api_get_things_by_platform_id')
+queue_get_thing_by_global_id = Queue(name='registry.request.api_get_thing_by_global_id', exchange=exchange, routing_key='registry.request.api_get_thing_by_global_id')
+queue_get_things_by_platform_id = Queue(name='registry.request.api_get_things_by_platform_id', exchange=exchange, routing_key='registry.request.api_get_things_by_platform_id')
 
-update_all_config_changes()
+
+if MODE == 'PULL':
+    update_all_config_changes()
 
 while 1:
     try:
         consumer_connection.ensure_connection(max_retries=1)
-        with nested (Consumer(consumer_connection, queues=queue_add_platform, callbacks=[api_add_platform], no_ack=True),
+        with nested (Consumer(consumer_connection, queues=queue_get_things_by_platform_id, callbacks=[api_get_things_by_platform_id], no_ack=True),
+                     Consumer(consumer_connection, queues=queue_get_thing_by_global_id, callbacks=[api_get_thing_by_global_id], no_ack=True),
+                     Consumer(consumer_connection, queues=queue_add_platform, callbacks=[api_add_platform], no_ack=True),
                      Consumer(consumer_connection, queues=queue_get_things, callbacks=[api_get_things], no_ack=True),
                      Consumer(consumer_connection, queues=queue_get_list_platforms, callbacks=[api_get_list_platforms], no_ack=True),
                      Consumer(consumer_connection, queues=queue_check_config, callbacks=[handle_configuration_changes], no_ack=True)):

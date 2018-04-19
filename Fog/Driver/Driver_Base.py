@@ -1,12 +1,15 @@
 import paho.mqtt.client as mqtt
 import json
 import configparser
+import threading
 
 
 class Driver:
-    def __init__(self, config_path):
+
+    def __init__(self, config_path, mode):
         config = configparser.ConfigParser()
         config.read(config_path)
+        self.mode = mode    #PULL or PUSH
         self.host = config['PLATFORM']['host']
         self.port = config['PLATFORM']['port']
         self.platform_name = config['PLATFORM']['platform_name']
@@ -60,11 +63,12 @@ class Driver:
             print("Wait for platform_id")
             self.clientMQTT.loop()
 
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
+        if mode == 'PULL':
+            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
+            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
 
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
+            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
+            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
 
         self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state')
         self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
@@ -72,9 +76,9 @@ class Driver:
 
     def api_get_states(self, client, userdata, msg):
         reply_to = json.loads(msg.payload.decode('utf-8'))['reply_to']
-        message_respone = self.get_states()
-        message_respone['reply_to'] = reply_to
-        self.clientMQTT.publish('driver/response/filter/api_get_states', json.dumps(message_respone))
+        message_response = self.get_states()
+        message_response['reply_to'] = reply_to
+        self.clientMQTT.publish('driver/response/filter/api_get_states', json.dumps(message_response))
 
     def api_check_configuration_changes(self, client, userdata, msg):
         message_response = self.check_configuration_changes()
@@ -102,17 +106,35 @@ class Driver:
     def on_connect(self, client, userdata, flags, rc):
         print("connect to Mosquitto")
         if self.platform_id is not None:
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
+            if self.mode == 'PULL':
+                self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
+                self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
 
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
+                self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
+                self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
 
             self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state')
             self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
 
     def run(self):
+        if self.mode == 'PUSH':
+            self.push_configuration_changes()
+            self.push_get_state()
         self.clientMQTT.loop_forever()
+
+    def push_configuration_changes(self):
+        TIME_PUSH_CONFIG = 5
+        message = self.check_configuration_changes()
+        message['reply_to'] = 'driver.response.registry.api_check_configuration_changes'
+        self.clientMQTT.publish('driver/response/forwarder/api_check_configuration_changes', json.dumps(message))
+        threading.Timer(TIME_PUSH_CONFIG, self.push_configuration_changes).start()
+
+    def push_get_state(self):
+        TIME_PUSH_STATE = 5
+        message = self.get_states()
+        message['reply_to'] = 'driver.response.collector.api_get_states'
+        self.clientMQTT.publish('driver/response/filter/api_get_states', json.dumps(message))
+        threading.Timer(TIME_PUSH_STATE, self.push_get_state).start()
 
     def get_states(self):
         pass

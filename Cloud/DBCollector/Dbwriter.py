@@ -9,6 +9,7 @@ BROKER_CLOUD = 'localhost'
 consumer_connection = Connection(BROKER_CLOUD)
 exchange = Exchange("IoT", type="direct")
 
+
 def write_db(list_things):
     print("Write to database")
     data_write_db = []

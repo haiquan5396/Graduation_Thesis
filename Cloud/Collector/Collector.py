@@ -10,7 +10,7 @@ BROKER_CLOUD = "localhost"
 
 producer_connection = Connection(BROKER_CLOUD)
 consumer_connection = Connection(BROKER_CLOUD)
-MODE = "PULL" # or PUSH
+MODE = "PUSH" # PUSH or PULL
 
 exchange = Exchange("IoT", type="direct")
 
@@ -66,98 +66,12 @@ def handle_collect_by_platform_id(body, message):
     print('Send new state to Dbwriter')
 
 
-def get_thing_by_id(thing_global_id):
-    print('Get thing by thing_global_id')
-    check_response = 0
-    thing = {}
-
-    response_queue_name = uuid()
-    response_queue = Queue(name=response_queue_name, exclusive=True, auto_delete=True, exchange=exchange, routing_key=response_queue_name)
-
-    message = {
-        'caller': response_queue_name,
-        'thing_global_id': thing_global_id
-    }
-
-
-    def handle_api_get_thing_by_global_id(body, message):
-        nonlocal check_response, thing
-        thing = json.loads(body)
-        check_response = 1
-
-    request_queue = Queue(name='dbwriter.request.api_get_thing_by_global_id', exchange=exchange,
-                          routing_key='dbwriter.request.api_get_thing_by_global_id')
-    request_routing_key = 'dbwriter.request.api_get_thing_by_global_id'
-
-    producer_connection.ensure_connection()
-    with Producer(producer_connection) as producer:
-        producer.publish(
-            json.dumps(message),
-            exchange=exchange.name,
-            routing_key=request_routing_key,
-            declare=[request_queue],
-            retry=True
-        )
-
-    with Consumer(producer_connection,
-                  callbacks=[handle_api_get_thing_by_global_id],
-                  queues=[response_queue], no_ack=True):
-        while check_response == 0:
-            producer_connection.drain_events()
-
-
-
-
-
-    return thing
-
-
-def get_things(list_thing_global_id):
-    print('Get all thing state in list thing')
-    check_response = 0
-    list_thing = []
-    response_queue_name = uuid()
-    response_queue = Queue(name=response_queue_name, exclusive=True, auto_delete=True, exchange=exchange, routing_key=response_queue_name)
-
-    message = {
-        'caller': response_queue_name,
-        'list_thing_global_id': list_thing_global_id
-    }
-
-    def handle_api_get_things(body, message):
-        nonlocal check_response, list_thing
-        list_thing = ast.literal_eval(body)
-        check_response = 1
-
-    request_queue = Queue(name='dbwriter.request.api_get_things', exchange=exchange, routing_key='dbwriter.request.api_get_things')
-    request_routing_key = 'dbwriter.request.api_get_things'
-
-    producer_connection.ensure_connection()
-    with Producer(producer_connection) as producer:
-        producer.publish(
-            json.dumps(message),
-            exchange=exchange.name,
-            routing_key=request_routing_key,
-            declare=[request_queue],
-            retry=True
-        )
-
-    with Consumer(producer_connection,
-                  callbacks=[handle_api_get_things],
-                  queues=[response_queue], no_ack=True):
-        while check_response == 0:
-            producer_connection.drain_events()
-
-    return list_thing
-
-
 def get_list_platforms():
     print("Get list platforms from Registry")
     message = {
         'reply_to': 'registry.response.collector.api_get_list_platforms',
         'platform_status': "active"
     }
-
 
     queue = Queue(name='registry.request.api_get_list_platforms', exchange=exchange, routing_key='registry.request.api_get_list_platforms')
     routing_key = 'registry.request.api_get_list_platforms'
@@ -190,42 +104,7 @@ def handle_notification(body, message):
         get_list_platforms()
 
 
-# def api_get_things(body, message):
-#     print('API get things')
-#     response_routing_key = json.loads(body)['reply_to']
-#     list_thing_global_id = json.loads(body)['list_thing_global_id']
-#     message_response = get_things(list_thing_global_id)
-#
-#     producer_connection.ensure_connection()
-#     with Producer(producer_connection) as producer:
-#         producer.publish(
-#             str(message_response),
-#             exchange=exchange.name,
-#             routing_key=response_routing_key,
-#             retry=True
-#         )
-
-
-# def api_get_thing_by_id(body, message):
-#     print('Get thing state by id')
-#     response_routing_key = json.loads(body)['reply_to']
-#     thing_global_id = json.loads(body)['thing_global_id']
-#     message_response = get_thing_by_id(thing_global_id)
-#     producer_connection.ensure_connection()
-#     with Producer(producer_connection) as producer:
-#         producer.publish(
-#             str(message_response),
-#             exchange=exchange.name,
-#             routing_key=response_routing_key,
-#             retry=True
-#         )
-
-
 def run():
-    # queue_get_things = Queue(name='collector.request.api_get_things', exchange=exchange,
-    #                          routing_key='collector.request.api_get_things')
-    # queue_get_thing_by_id = Queue(name='collector.request.api_get_thing_by_id', exchange=exchange,
-    #                               routing_key='collector.request.api_get_thing_by_id')
     queue_notification = Queue(name='collector.request.notification', exchange=exchange,
                                routing_key='collector.request.notification')
     queue_list_platforms = Queue(name='registry.response.collector.api_get_list_platforms', exchange=exchange,

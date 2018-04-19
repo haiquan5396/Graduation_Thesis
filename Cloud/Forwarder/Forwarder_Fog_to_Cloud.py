@@ -7,11 +7,11 @@ BROKER_CLOUD = "localhost"  #rabbitmq
 BROKER_FOG = "localhost"    #mosquitto
 MODE_COLLECT = "PULL"       #or PUSH
 
-#create Client Mosquitto
+# create Client Mosquitto
 client_fog = mqtt.Client()
 client_fog.connect(BROKER_FOG)
 
-#Creat connection to rabbitmq cloud
+# Creat connection to rabbitmq cloud
 rabbitmq_connection = Connection(BROKER_CLOUD)
 exchange = Exchange('IoT', type='direct')
 
@@ -35,8 +35,7 @@ def on_message_registry(client, userdata, msg):
         )
 
 
-#On message for sub on /driver/response/filter/..
-
+# On message for sub on /driver/response/filter/..
 def on_message_filter(client, userdata, msg):
     print('Forward to Collector api_get_states')
     data = json.loads(msg.payload.decode("utf-8"))
