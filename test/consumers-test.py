@@ -8,9 +8,9 @@ exchange = Exchange("IoT", type="direct")
 # queue_name = "registry.request.api_add_platform"
 # queue = Queue(name=queue_name, exchange=exchange, routing_key=routing_key)
 
-queue_response = Queue(name='driver.response.registry.api_check_configuration_changes', exchange=exchange, routing_key='registry.request.api_add_platform')
+queue_response = Queue(name='1', exchange=exchange, routing_key='registry.request.api_add_platform')
 
-routing_key = 'driver.response.registry.api_check_configuration_changes'
+routing_key = '1'
 
 def process_message(body, message):
   print(body)

@@ -7,7 +7,6 @@ from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue, u
 from kombu.utils.compat import nested
 
 BROKER_CLOUD = "localhost"
-BROKER_FOG = "localhost"
 
 producer_connection = Connection(BROKER_CLOUD)
 consumer_connection = Connection(BROKER_CLOUD)
@@ -17,12 +16,12 @@ exchange = Exchange("IoT", type="direct")
 
 TIME_COLLECT = 5
 
-list_platforms = []
+list_platform_id = []
 
 
 def collect():
     print("Collect the states of the devices")
-    for platform_id in list_platforms:
+    for platform_id in list_platform_id:
         collect_by_platform_id(platform_id)
     threading.Timer(TIME_COLLECT, collect).start()
 
@@ -155,7 +154,8 @@ def get_things(list_thing_global_id):
 def get_list_platforms():
     print("Get list platforms from Registry")
     message = {
-        'reply_to': 'registry.response.collector.api_get_list_platforms'
+        'reply_to': 'registry.response.collector.api_get_list_platforms',
+        'platform_status': "active"
     }
 
 
@@ -173,9 +173,15 @@ def get_list_platforms():
 
 
 def handle_get_list(body, message):
-    global list_platforms
-    list_platforms = ast.literal_eval(body)
-    print('Updated list of platform_id: ', str(list_platforms))
+    global list_platform_id
+    list_platforms = json.loads(body)['list_platforms']
+    temp = []
+    for platform in list_platforms:
+        temp.append(platform['platform_id'])
+
+    list_platform_id = temp
+
+    print('Updated list of platform_id: ', str(list_platform_id))
 
 
 def handle_notification(body, message):
@@ -184,42 +190,42 @@ def handle_notification(body, message):
         get_list_platforms()
 
 
-def api_get_things(body, message):
-    print('API get things')
-    response_routing_key = json.loads(body)['reply_to']
-    list_thing_global_id = json.loads(body)['list_thing_global_id']
-    message_response = get_things(list_thing_global_id)
+# def api_get_things(body, message):
+#     print('API get things')
+#     response_routing_key = json.loads(body)['reply_to']
+#     list_thing_global_id = json.loads(body)['list_thing_global_id']
+#     message_response = get_things(list_thing_global_id)
+#
+#     producer_connection.ensure_connection()
+#     with Producer(producer_connection) as producer:
+#         producer.publish(
+#             str(message_response),
+#             exchange=exchange.name,
+#             routing_key=response_routing_key,
+#             retry=True
+#         )
 
-    producer_connection.ensure_connection()
-    with Producer(producer_connection) as producer:
-        producer.publish(
-            str(message_response),
-            exchange=exchange.name,
-            routing_key=response_routing_key,
-            retry=True
-        )
 
-
-def api_get_thing_by_id(body, message):
-    print('Get thing state by id')
-    response_routing_key = json.loads(body)['reply_to']
-    thing_global_id = json.loads(body)['thing_global_id']
-    message_response = get_thing_by_id(thing_global_id)
-    producer_connection.ensure_connection()
-    with Producer(producer_connection) as producer:
-        producer.publish(
-            str(message_response),
-            exchange=exchange.name,
-            routing_key=response_routing_key,
-            retry=True
-        )
+# def api_get_thing_by_id(body, message):
+#     print('Get thing state by id')
+#     response_routing_key = json.loads(body)['reply_to']
+#     thing_global_id = json.loads(body)['thing_global_id']
+#     message_response = get_thing_by_id(thing_global_id)
+#     producer_connection.ensure_connection()
+#     with Producer(producer_connection) as producer:
+#         producer.publish(
+#             str(message_response),
+#             exchange=exchange.name,
+#             routing_key=response_routing_key,
+#             retry=True
+#         )
 
 
 def run():
-    queue_get_things = Queue(name='collector.request.api_get_things', exchange=exchange,
-                             routing_key='collector.request.api_get_things')
-    queue_get_thing_by_id = Queue(name='collector.request.api_get_thing_by_id', exchange=exchange,
-                                  routing_key='collector.request.api_get_thing_by_id')
+    # queue_get_things = Queue(name='collector.request.api_get_things', exchange=exchange,
+    #                          routing_key='collector.request.api_get_things')
+    # queue_get_thing_by_id = Queue(name='collector.request.api_get_thing_by_id', exchange=exchange,
+    #                               routing_key='collector.request.api_get_thing_by_id')
     queue_notification = Queue(name='collector.request.notification', exchange=exchange,
                                routing_key='collector.request.notification')
     queue_list_platforms = Queue(name='registry.response.collector.api_get_list_platforms', exchange=exchange,
@@ -235,10 +241,7 @@ def run():
     while 1:
         try:
             consumer_connection.ensure_connection(max_retries=1)
-            with nested(Consumer(consumer_connection, queues=queue_get_things, callbacks=[api_get_things], no_ack=True),
-                        Consumer(consumer_connection, queues=queue_get_thing_by_id, callbacks=[api_get_thing_by_id],
-                                 no_ack=True),
-                        Consumer(consumer_connection, queues=queue_notification, callbacks=[handle_notification],
+            with nested(Consumer(consumer_connection, queues=queue_notification, callbacks=[handle_notification],
                                  no_ack=True),
                         Consumer(consumer_connection, queues=queue_list_platforms, callbacks=[handle_get_list],
                                  no_ack=True),

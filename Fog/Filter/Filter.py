@@ -5,7 +5,7 @@ filter_topic_sub = 'driver/response/filter/api_get_states'
 
 filter_topic_pub = 'filter/response/forwarder/api_get_states'
 
-broker_fog = '192.168.0.110'
+broker_fog = 'localhost'
 client = mqtt.Client()
 
 client.connect(broker_fog)

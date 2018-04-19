@@ -59,7 +59,6 @@ def on_message_add_platform(body, message):
 def on_disconnect(client, userdata, rc):
     if rc != 0:
         print("disconnect to Mosquitto.")
-        client_fog.publish("hihi", 'lala')
 
 
 def on_connect(client, userdata, flags, rc):
