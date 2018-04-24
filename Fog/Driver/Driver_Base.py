@@ -104,7 +104,7 @@ class Driver:
             print("disconnect to Mosquitto.")
 
     def on_connect(self, client, userdata, flags, rc):
-        print("connect to Mosquitto")
+        print("connected to Mosquitto")
         if self.platform_id is not None:
             if self.mode == 'PULL':
                 self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')

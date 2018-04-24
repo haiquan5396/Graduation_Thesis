@@ -19,4 +19,4 @@ COPY ./Driver_Base.py /app
 CMD python3 HomeAssistant_Driver.py ${MODE}
 
 #docker build -t haiquan5396/homeassistant_driver:1.0 -f Dockerfile_Home_Assistant .
-#docker run -it --name cloud-fog-test -e "BROKER_CLOUD=192.168.60.248" -e "BROKER_FOG=192.168.60.248" haiquan5396/forwarder_cloud_to_fog:1.0
+#docker run -it --name home-driver-test -e "MODE=PUSH" -v /config: /app/config haiquan5396/homeassistant_driver:1.0
