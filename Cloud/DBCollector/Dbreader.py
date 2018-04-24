@@ -1,14 +1,14 @@
-import ast
 import json
-import threading
-from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue, uuid
-from kombu.utils.compat import nested
+from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
+# from kombu.utils.compat import nested
 from influxdb import InfluxDBClient
+import sys
 
-clientDB = InfluxDBClient('localhost', 8086, 'root', 'root', 'Collector_DB')
+BROKER_CLOUD = sys.argv[1]
+HOST_INFLUXDB = sys.argv[2]
+
+clientDB = InfluxDBClient(HOST_INFLUXDB, 8086, 'root', 'root', 'Collector_DB')
 clientDB.create_database('Collector_DB')
-
-BROKER_CLOUD = "localhost"
 
 producer_connection = Connection(BROKER_CLOUD)
 consumer_connection = Connection(BROKER_CLOUD)
@@ -49,7 +49,7 @@ def api_get_item_state(body, message):
             routing_key=reply_to,
             retry=True
         )
-    print("Done: {}".format(items))
+    # print("Done: {}".format(items))
 
 
 queue_get_item_state = Queue(name='dbreader.request.api_get_item_state', exchange=exchange, routing_key='dbreader.request.api_get_item_state')

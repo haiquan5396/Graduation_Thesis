@@ -177,7 +177,12 @@
 #         print("child method child")
 #
 # Child().parent_method()
-hii = 0
-if 1 is None and 1 == 1:
-    hii =3
-print(hii)
+# hi0i = 0
+# if 1 is None and 1 == 1:
+#     hii =3
+# print(hii)
+import requests
+url = 'http://127.0.0.1:5000/api/things/6e42cc61-9c44-490b-a10d-2d8367f6bba7-sensor.temperature'
+response = requests.get(url).json()
+print(response[0]['items'][0]['item_state'])
+print(response[0]['items'][0]['item_state'] == 24)

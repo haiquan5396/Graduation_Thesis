@@ -1,21 +1,22 @@
 import json
 import uuid
 #import MySQLdb
-import ast
+# import ast
 import time
 import threading
 from mysql.connector.pooling import MySQLConnectionPool
 from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
 from kombu.utils.compat import nested
+import sys
 
-BROKER_CLOUD = "localhost"
-TIME_DELETE_PLATFORM = 60
-MODE = 'PUSH' # or PUSH or PULL
+BROKER_CLOUD = sys.argv[1]  #rabbitmq
+MODE = sys.argv[2] # or PUSH or PULL
+TIME_INACTIVE_PLATFORM = 60
 
 dbconfig = {
   "database": "Registry_DB",
   "user":     "root",
-  "host":     "0.0.0.0",
+  "host":     sys.argv[3],
   "passwd":   "root",
   "autocommit": "True"
 }
@@ -46,7 +47,7 @@ def update_config_changes_by_platform_id(platform_id):
     last_response = cursor_1.fetchone()
     print("Check Time")
     print(time.time() - last_response[0])
-    if (time.time() - last_response[0]) < TIME_DELETE_PLATFORM:
+    if (time.time() - last_response[0]) < TIME_INACTIVE_PLATFORM:
         # Check last response
         message = {
             'reply_to': 'driver.response.registry.api_check_configuration_changes',

@@ -60,7 +60,7 @@ class Driver:
         self.clientMQTT.publish('registry/request/api_add_platform', json.dumps(message))
 
         while self.platform_id is None or check_response == 0:
-            print("Wait for platform_id")
+            print("Wait for Registry response")
             self.clientMQTT.loop()
 
         if mode == 'PULL':

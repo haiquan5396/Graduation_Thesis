@@ -1,0 +1,22 @@
+FROM python:3.5-slim
+
+MAINTAINER HaiQuan "haiquan5396@gmail.com"
+
+ENV MODE "PULL"
+
+COPY ./HomeAssistant/requirements.txt /app/requirements.txt
+
+VOLUME /app/config
+
+WORKDIR /app
+
+RUN pip3 install -r requirements.txt
+
+COPY ./HomeAssistant /app
+
+COPY ./Driver_Base.py /app
+
+CMD python3 HomeAssistant_Driver.py ${MODE}
+
+#docker build -t haiquan5396/homeassistant_driver:1.0 -f Dockerfile_Home_Assistant .
+#docker run -it --name cloud-fog-test -e "BROKER_CLOUD=192.168.60.248" -e "BROKER_FOG=192.168.60.248" haiquan5396/forwarder_cloud_to_fog:1.0

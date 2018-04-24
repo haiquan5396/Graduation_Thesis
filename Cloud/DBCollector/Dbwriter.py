@@ -1,11 +1,13 @@
 from influxdb import InfluxDBClient
 import json
 from kombu import Connection, Consumer, Exchange, Queue, exceptions
+import sys
 
-clientDB = InfluxDBClient('localhost', 8086, 'root', 'root', 'Collector_DB')
+BROKER_CLOUD = sys.argv[1]
+HOST_INFLUXDB = sys.argv[2]
+clientDB = InfluxDBClient(HOST_INFLUXDB, 8086, 'root', 'root', 'Collector_DB')
 clientDB.create_database('Collector_DB')
 
-BROKER_CLOUD = 'localhost'
 consumer_connection = Connection(BROKER_CLOUD)
 exchange = Exchange("IoT", type="direct")
 

@@ -2,7 +2,8 @@ import json
 import requests
 import hashlib
 import time
-from Fog.Driver.Driver_Base import Driver
+from Driver_Base import Driver
+import sys
 
 
 class HomeAssistant(Driver):
@@ -28,10 +29,10 @@ class HomeAssistant(Driver):
                 # VD: đèn là một thing và có item chính là bản thân cái đèn đó
                 item_type = thing_type
                 item_state = thing['state']
-                # if item_type == 'sensor' and thing['entity_id'] == 'sensor.temperature':
-                #     item_state = int(thing['state'])
-                # else:
-                #     item_state = thing['state']
+                if item_type == 'sensor' and thing['entity_id'] == 'sensor.temperature':
+                    item_state = int(thing['state'])
+                else:
+                    item_state = thing['state']
 
                 thing_temp = {
                     'thing_type': thing_type,
@@ -151,7 +152,7 @@ class HomeAssistant(Driver):
             print('Type are not support')
 
 if __name__ == '__main__':
-    CONFIG_PATH = "config/homeassistant.ini"
-    MODE = 'PUSH'
+    CONFIG_PATH = "config/configuration.ini"
+    MODE = sys.argv[1]
     home_assistant = HomeAssistant(CONFIG_PATH, MODE)
     home_assistant.run()

@@ -1,0 +1,19 @@
+FROM python:3.5-slim
+
+MAINTAINER HaiQuan "haiquan5396@gmail.com"
+
+ENV BROKER_CLOUD localhost
+ENV HOST_INFLUXDB locahost
+
+COPY ./requirements.txt /app/requirements.txt
+
+WORKDIR /app
+
+RUN pip3 install -r requirements.txt
+
+COPY ./Dbwriter.py /app
+
+CMD python3 Dbwriter.py ${BROKER_CLOUD} ${HOST_INFLUXDB}
+
+#docker build -t haiquan5396/forwarder_fog_to_cloud:1.0 -f Dockerfile_Fog_to_Cloud .
+#docker run -it --name fog-cloud-test -e "BROKER_CLOUD=192.168.60.248" -e "BROKER_FOG=192.168.60.248" haiquan5396/forwarder_fog_to_cloud:1.0

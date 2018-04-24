@@ -1,16 +1,14 @@
-import paho.mqtt.client as mqtt
-from influxdb import InfluxDBClient
-import ast
 import json
 import threading
 from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue, uuid
 from kombu.utils.compat import nested
-
-BROKER_CLOUD = "localhost"
+import sys
+BROKER_CLOUD = sys.argv[1]
+MODE = sys.argv[2] #PULL or PUSH
 
 producer_connection = Connection(BROKER_CLOUD)
 consumer_connection = Connection(BROKER_CLOUD)
-MODE = "PUSH" # PUSH or PULL
+
 
 exchange = Exchange("IoT", type="direct")
 
@@ -51,7 +49,7 @@ def handle_collect_by_platform_id(body, message):
     # print(msg.payload.decode('utf-8'))
     # print(ast.literal_eval(msg.payload.decode('utf-8')))
     list_things = json.loads(body)
-    print(list_things)
+    # print(list_things)
     request_queue = Queue(name='dbwriter.request.api_write_db', exchange=exchange, routing_key='dbwriter.request.api_write_db')
     request_routing_key = 'dbwriter.request.api_write_db'
     producer_connection.ensure_connection()

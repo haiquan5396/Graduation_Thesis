@@ -1,7 +1,8 @@
 from kombu import Connection, Producer, Consumer, Queue, uuid, Exchange
 import json
+import sys
 
-BROKER_CLOUD = "localhost"
+BROKER_CLOUD = sys.argv[1]
 rabbitmq_connection = Connection(BROKER_CLOUD)
 exchange = Exchange("IoT", type="direct")
 
@@ -20,7 +21,8 @@ def api_get_platforms(platform_status):
 @app.route('/api/things', defaults={'thing_status': 'active', 'item_status': 'active'}, methods=['GET'])
 @app.route('/api/things/<thing_status>/<item_status>', methods=['GET'])
 def api_get_things_state(thing_status, item_status):
-    print("thing: {} item: {}".format(thing_status, item_status))
+    # print("thing: {} item: {}".format(thing_status, item_status))
+    print(BROKER_CLOUD)
     return jsonify(get_things_state(thing_status, item_status))
 
 
@@ -77,7 +79,7 @@ def get_list_platforms(platform_status):
             while message_response is None:
                 rabbitmq_connection.drain_events()
 
-        return message_response
+        return message_response['list_platforms']
     else:
         return None
 
@@ -259,7 +261,7 @@ def get_things_state_by_list_thing(list_things_info):
             list_item_global_id.append(item_info['item_global_id'])
 
     list_item_state = get_items_state(list_item_global_id)['items']
-    print(list_item_state)
+    # print(list_item_state[0])
     for item_collect in list_item_state:
         for thing_info in list_things_info:
             if item_collect['thing_global_id'] == thing_info['thing_global_id']:
@@ -302,6 +304,5 @@ def set_state(thing_global_id, item_global_id, new_state):
         )
 
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

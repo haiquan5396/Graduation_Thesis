@@ -2,18 +2,34 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1fc0fb70-6608-4473-a9ba-cdcb567c5463" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Cloud/API/Api.py" afterPath="" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/API/Dockerfile" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/API/requirements.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Collector/Dockerfile" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Collector/requirements.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbreader" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbwriter" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/DBCollector/requirements.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Cloud_to_Fog" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Fog_to_Cloud" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Forwarder/requirements.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Registry/Dockerfile" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Cloud/Registry/requirements.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Fog/Driver/Dockerfile_Home_Assistant" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Fog/Filter/Dockerfile" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Fog/Filter/requirements.txt" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/Fog/Driver/config/configuration.ini" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/API/API.py" afterPath="$PROJECT_DIR$/Cloud/API/API.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/Collector/Collector.py" afterPath="$PROJECT_DIR$/Cloud/Collector/Collector.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/DBCollector/Dbreader.py" afterPath="$PROJECT_DIR$/Cloud/DBCollector/Dbreader.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py" afterPath="$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py" afterPath="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Fog_to_Cloud.py" afterPath="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Fog_to_Cloud.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Cloud/Registry/Registry.py" afterPath="$PROJECT_DIR$/Cloud/Registry/Registry.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Fog/Driver/Driver_Base.py" afterPath="$PROJECT_DIR$/Fog/Driver/Driver_Base.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py" afterPath="$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Fog/Driver/config/homeassistant.ini" afterPath="$PROJECT_DIR$/Fog/Driver/config/homeassistant.ini" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Fog/Filter/Filter.py" afterPath="$PROJECT_DIR$/Fog/Filter/Filter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/test_file.py" afterPath="$PROJECT_DIR$/test/test_file.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -24,25 +40,25 @@
   </component>
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/API_Rabbitmq$Unittests_in_test.coverage" NAME="Unittests in test Coverage Results" MODIFIED="1523785250569" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Forwarder_Cloud_to_Fog.coverage" NAME="Forwarder_Cloud_to_Fog Coverage Results" MODIFIED="1524142393220" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Forwarder" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Dbwriter.coverage" NAME="Dbwriter Coverage Results" MODIFIED="1524142404892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/DBCollector" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Forwarder_Cloud_to_Fog.coverage" NAME="Forwarder_Cloud_to_Fog Coverage Results" MODIFIED="1524540848042" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Forwarder" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Dbwriter.coverage" NAME="Dbwriter Coverage Results" MODIFIED="1524546025838" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/DBCollector" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$publisher.coverage" NAME="publisher Coverage Results" MODIFIED="1524021548182" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$Api.coverage" NAME="Api Coverage Results" MODIFIED="1524027841981" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/API" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$consumers_test.coverage" NAME="consumers-test Coverage Results" MODIFIED="1523678099770" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$Forwarder_Fog_to_Cloud__1_.coverage" NAME="Forwarder_Fog_to_Cloud (1) Coverage Results" MODIFIED="1523507461096" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Forwarder" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Collector.coverage" NAME="Collector Coverage Results" MODIFIED="1524142400404" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Collector" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$API.coverage" NAME="API Coverage Results" MODIFIED="1524142426726" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/API" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$HomeAssistant_Driver.coverage" NAME="HomeAssistant_Driver Coverage Results" MODIFIED="1524142414310" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Fog/Driver" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$API.coverage" NAME="API Coverage Results" MODIFIED="1524468210241" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/API" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Collector.coverage" NAME="Collector Coverage Results" MODIFIED="1524545378239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Collector" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$HomeAssistant_Driver.coverage" NAME="HomeAssistant_Driver Coverage Results" MODIFIED="1524539604822" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Fog/Driver" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$drain_event_thread.coverage" NAME="drain_event_thread Coverage Results" MODIFIED="1523616923367" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$mosquitto_pub.coverage" NAME="mosquitto_pub Coverage Results" MODIFIED="1523527386356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Dbreader.coverage" NAME="Dbreader Coverage Results" MODIFIED="1524142407053" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/DBCollector" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Dbreader.coverage" NAME="Dbreader Coverage Results" MODIFIED="1524544926585" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/DBCollector" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$consumers.coverage" NAME="consumers Coverage Results" MODIFIED="1523536174009" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$create_db_registry.coverage" NAME="create_db_registry Coverage Results" MODIFIED="1524142210793" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Registry" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Registry.coverage" NAME="Registry Coverage Results" MODIFIED="1524142397444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Registry" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$create_db_registry.coverage" NAME="create_db_registry Coverage Results" MODIFIED="1524468621811" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Registry" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Registry.coverage" NAME="Registry Coverage Results" MODIFIED="1524543432273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Registry" />
     <SUITE FILE_PATH="coverage/API_Rabbitmq$Driver.coverage" NAME="Driver Coverage Results" MODIFIED="1524111255049" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Fog/Driver" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Filter.coverage" NAME="Filter Coverage Results" MODIFIED="1524142402871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Fog/Filter" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$Forwarder_Fog_to_Cloud.coverage" NAME="Forwarder_Fog_to_Cloud Coverage Results" MODIFIED="1524142395420" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Forwarder" />
-    <SUITE FILE_PATH="coverage/API_Rabbitmq$test_file.coverage" NAME="test_file Coverage Results" MODIFIED="1524113732137" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Filter.coverage" NAME="Filter Coverage Results" MODIFIED="1524469071387" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Fog/Filter" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$Forwarder_Fog_to_Cloud.coverage" NAME="Forwarder_Fog_to_Cloud Coverage Results" MODIFIED="1524468641835" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Cloud/Forwarder" />
+    <SUITE FILE_PATH="coverage/API_Rabbitmq$test_file.coverage" NAME="test_file Coverage Results" MODIFIED="1524229293333" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
   </component>
   <component name="DatabaseView">
     <option name="SHOW_INTERMEDIATE" value="true" />
@@ -57,186 +73,102 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="homeassistant.ini" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Fog/Driver/config/homeassistant.ini">
+      <file leaf-file-name="Dockerfile_Cloud_to_Fog" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Cloud_to_Fog">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="126">
-              <caret line="8" column="0" lean-forward="true" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+            <state relative-caret-position="252">
+              <caret line="14" column="0" lean-forward="true" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="create_db_registry.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cloud/Registry/create_db_registry.py">
+      <file leaf-file-name="Dockerfile_Dbwriter" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbwriter">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="92">
-              <caret line="20" column="20" lean-forward="true" selection-start-line="20" selection-start-column="20" selection-end-line="20" selection-end-column="20" />
-              <folding>
-                <marker date="1524120848288" expanded="true" signature="271:476" ph="CREATE TABLE... IF" />
-                <marker date="1524120848288" expanded="true" signature="523:838" ph="CREATE TABLE... IF" />
-                <marker date="1524120848288" expanded="true" signature="862:1185" ph="CREATE TABLE... IF" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Registry.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cloud/Registry/Registry.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-35">
-              <caret line="298" column="13" lean-forward="false" selection-start-line="298" selection-start-column="13" selection-end-line="298" selection-end-column="13" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-                <element signature="e#728#949#0" expanded="false" />
-                <element signature="e#1011#2414#0" expanded="false" />
-                <element signature="e#2470#7260#0" expanded="false" />
-                <element signature="e#7338#7643#0" expanded="false" />
-                <element signature="e#7699#8370#0" expanded="false" />
-                <element signature="e#8409#9404#0" expanded="false" />
-                <element signature="e#9444#9705#0" expanded="false" />
-                <element signature="e#9750#10362#0" expanded="false" />
-                <element signature="e#10410#11588#0" expanded="false" />
-                <element signature="e#11638#12151#0" expanded="false" />
-                <element signature="e#17054#18701#0" expanded="false" />
-                <element signature="e#19339#19855#0" expanded="false" />
-                <marker date="1524141920718" expanded="true" signature="1096:1153" ph="SELECT last_... Platform" />
-                <marker date="1524141920718" expanded="true" signature="3139:3240" ph="UPDATE Platf... " />
-                <marker date="1524141920718" expanded="true" signature="3497:3555" ph="UPDATE Thing... " />
-                <marker date="1524141920718" expanded="true" signature="4210:4295" ph="UPDATE Thing... " />
-                <marker date="1524141920718" expanded="true" signature="4574:4629" ph="UPDATE Item " />
-                <marker date="1524141920718" expanded="true" signature="5049:5104" ph="UPDATE Item " />
-                <marker date="1524141920718" expanded="true" signature="5363:5409" ph="INSERT INTO Item... " />
-                <marker date="1524141920718" expanded="true" signature="5934:5992" ph="UPDATE Thing... " />
-                <marker date="1524141920718" expanded="true" signature="6169:6224" ph="UPDATE Item " />
-                <marker date="1524141920718" expanded="true" signature="6453:6500" ph="INSERT INTO Thing... " />
-                <marker date="1524141920718" expanded="true" signature="6900:6946" ph="INSERT INTO Item... " />
-                <marker date="1524141920718" expanded="true" signature="7897:7974" ph="UPDATE Platf... " />
-                <marker date="1524141920718" expanded="true" signature="8537:8593" ph="SELECT thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="8991:9047" ph="UPDATE Item " />
-                <marker date="1524141920718" expanded="true" signature="9135:9189" ph="UPDATE Thing... " />
-                <marker date="1524141920718" expanded="true" signature="9250:9310" ph="UPDATE Platf... " />
-                <marker date="1524141920718" expanded="true" signature="10592:10742" ph="SELECT platf... Platform" />
-                <marker date="1524141920718" expanded="true" signature="10815:10967" ph="SELECT platf... Platform" />
-                <marker date="1524141920718" expanded="true" signature="11035:11154" ph="SELECT platf... Platform" />
-                <marker date="1524141920718" expanded="true" signature="12587:12665" ph="UPDATE Platf... " />
-                <marker date="1524141920718" expanded="true" signature="12964:13011" ph="INSERT INTO Platform... " />
-                <marker date="1524141920718" expanded="true" signature="14152:14425" ph="SELECT Thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="14493:14646" ph="SELECT Thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="14493:14768" ph="SELECT Thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="14831:15042" ph="SELECT Thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="15104:15368" ph="SELECT Item.... Item" />
-                <marker date="1524141920718" expanded="true" signature="15433:15699" ph="SELECT Item.... Item" />
-                <marker date="1524141920718" expanded="true" signature="15759:15964" ph="SELECT Item.... Item" />
-                <marker date="1524141920718" expanded="true" signature="17140:17394" ph="SELECT Thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="17140:17396" ph="SELECT Thing... Thing" />
-                <marker date="1524141920718" expanded="true" signature="17485:17745" ph="SELECT Item.... Item" />
-                <marker date="1524141920718" expanded="true" signature="17485:17747" ph="SELECT Item.... Item" />
-                <marker date="1524141920718" expanded="false" signature="18738:19285" ph="..." />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="API.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cloud/API/API.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="281" column="58" lean-forward="true" selection-start-line="281" selection-start-column="58" selection-end-line="281" selection-end-column="58" />
-              <folding>
-                <element signature="e#0#71#0" expanded="true" />
-                <element signature="e#1921#3242#0" expanded="false" />
-                <element signature="e#3297#4699#0" expanded="false" />
-                <element signature="e#4756#4929#0" expanded="false" />
-                <element signature="e#4978#6181#0" expanded="false" />
-                <element signature="e#6239#7387#0" expanded="false" />
-                <element signature="e#7445#7620#0" expanded="false" />
-                <element signature="e#7704#7905#0" expanded="false" />
-                <element signature="e#7989#9507#0" expanded="false" />
-                <element signature="e#9569#10430#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Forwarder_Cloud_to_Fog.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-57">
-              <caret line="62" column="29" lean-forward="false" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
+            <state relative-caret-position="234">
+              <caret line="13" column="21" lean-forward="false" selection-start-line="13" selection-start-column="21" selection-end-line="13" selection-end-column="21" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Collector.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cloud/Collector/Collector.py">
+      <file leaf-file-name="Dockerfile_Dbreader" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbreader">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="149">
-              <caret line="104" column="0" lean-forward="true" selection-start-line="104" selection-start-column="0" selection-end-line="104" selection-end-column="0" />
-              <folding>
-                <element signature="e#487#665#0" expanded="false" />
-                <element signature="e#713#1401#0" expanded="false" />
-                <element signature="e#1458#2226#0" expanded="false" />
-                <element signature="e#2259#2923#0" expanded="false" />
-                <element signature="e#2966#3236#0" expanded="false" />
-                <element signature="e#3283#3408#0" expanded="false" />
-                <element signature="e#3426#4961#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Driver_Base.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Fog/Driver/Driver_Base.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="108">
-              <caret line="118" column="8" lean-forward="false" selection-start-line="118" selection-start-column="8" selection-end-line="118" selection-end-column="8" />
-              <folding>
-                <element signature="e#0#31#0" expanded="true" />
-                <element signature="e#149#3093#0" expanded="false" />
-                <element signature="e#3156#3414#0" expanded="false" />
-                <element signature="e#3494#3810#0" expanded="false" />
-                <element signature="e#3872#4413#0" expanded="false" />
-                <element signature="e#4474#4531#0" expanded="false" />
-                <element signature="e#4596#5398#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Filter.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Fog/Filter/Filter.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="189">
-              <caret line="29" column="30" lean-forward="true" selection-start-line="29" selection-start-column="30" selection-end-line="29" selection-end-column="30" />
+            <state relative-caret-position="324">
+              <caret line="18" column="30" lean-forward="false" selection-start-line="18" selection-start-column="30" selection-end-line="18" selection-end-column="30" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Forwarder_Fog_to_Cloud.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Fog_to_Cloud.py">
+      <file leaf-file-name="Dockerfile" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Fog/Filter/Dockerfile">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="172">
-              <caret line="22" column="26" lean-forward="true" selection-start-line="22" selection-start-column="26" selection-end-line="22" selection-end-column="26" />
+            <state relative-caret-position="252">
+              <caret line="14" column="35" lean-forward="true" selection-start-line="14" selection-start-column="35" selection-end-line="14" selection-end-column="35" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="HomeAssistant_Driver.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py">
+      <file leaf-file-name="configuration.ini" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Fog/Driver/configuration.ini">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="156" column="21" lean-forward="false" selection-start-line="156" selection-start-column="21" selection-end-line="156" selection-end-column="21" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-                <element signature="e#2324#4426#0" expanded="false" />
-                <element signature="e#4473#4809#0" expanded="false" />
-                <element signature="e#4865#5103#0" expanded="false" />
-                <element signature="e#5173#5461#0" expanded="false" />
-              </folding>
+            <state relative-caret-position="162">
+              <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Dockerfile" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/Registry/Dockerfile">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="270">
+              <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Dockerfile_Home_Assistant" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Fog/Driver/Dockerfile_Home_Assistant">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="360">
+              <caret line="20" column="1" lean-forward="false" selection-start-line="20" selection-start-column="1" selection-end-line="20" selection-end-column="1" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Dockerfile" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/Collector/Dockerfile">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="324">
+              <caret line="18" column="44" lean-forward="false" selection-start-line="18" selection-start-column="44" selection-end-line="18" selection-end-column="44" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Dockerfile_Fog_to_Cloud" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Fog_to_Cloud">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="252">
+              <caret line="14" column="0" lean-forward="false" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Dockerfile" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Cloud/API/Dockerfile">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="216">
+              <caret line="12" column="12" lean-forward="true" selection-start-line="12" selection-start-column="12" selection-end-line="12" selection-end-column="12" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -252,13 +184,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>registry</find>
-      <find>limit</find>
-      <find>self</find>
-      <find>list_platforms</find>
-      <find>get_thing</find>
-      <find>json.loads</find>
-      <find>get_list</find>
       <find>json.d</find>
       <find>select</find>
       <find>get_thing_by_global_id</find>
@@ -266,7 +191,6 @@
       <find>item_global</find>
       <find>item_global_id</find>
       <find>thing</find>
-      <find>select</find>
       <find>Registry_DB</find>
       <find>Update</find>
       <find>get_things_state</find>
@@ -282,6 +206,14 @@
       <find>by_</find>
       <find>reply_to</find>
       <find>thing_status</find>
+      <find>mark</find>
+      <find>API get things info with thing_status and item_status</find>
+      <find>connection</find>
+      <find>time</find>
+      <find>TIME</find>
+      <find>add</find>
+      <find>PUSH</find>
+      <find>print</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -299,22 +231,42 @@
         <option value="$PROJECT_DIR$/test/flask-api.py" />
         <option value="$PROJECT_DIR$/test/consumers-test.py" />
         <option value="$PROJECT_DIR$/test/publisher.py" />
-        <option value="$PROJECT_DIR$/Cloud/DBCollector/Dbreader.py" />
         <option value="$PROJECT_DIR$/test/init.cfg" />
         <option value="$PROJECT_DIR$/test/config/init.cfg" />
-        <option value="$PROJECT_DIR$/test/test_file.py" />
         <option value="$PROJECT_DIR$/Cloud/Registry/create_db_registry.py" />
         <option value="$PROJECT_DIR$/Fog/Driver/Driver.py" />
-        <option value="$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py" />
+        <option value="$PROJECT_DIR$/test/test_file.py" />
+        <option value="$PROJECT_DIR$/Fog/Driver/config/homeassistant.ini" />
         <option value="$PROJECT_DIR$/Cloud/API/API.py" />
+        <option value="$PROJECT_DIR$/Cloud/API/requirements.txt" />
+        <option value="$PROJECT_DIR$/Cloud/Collector/requirements.txt" />
+        <option value="$PROJECT_DIR$/Cloud/API/ha" />
+        <option value="$PROJECT_DIR$/Cloud/DBCollector/requirements.txt" />
         <option value="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py" />
         <option value="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Fog_to_Cloud.py" />
-        <option value="$PROJECT_DIR$/Cloud/Collector/Collector.py" />
-        <option value="$PROJECT_DIR$/Cloud/Registry/Registry.py" />
-        <option value="$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py" />
-        <option value="$PROJECT_DIR$/Fog/Driver/Driver_Base.py" />
-        <option value="$PROJECT_DIR$/Fog/Driver/config/homeassistant.ini" />
+        <option value="$PROJECT_DIR$/Fog/Filter/requirements.txt" />
         <option value="$PROJECT_DIR$/Fog/Filter/Filter.py" />
+        <option value="$PROJECT_DIR$/Cloud/Forwarder/requirements.txt" />
+        <option value="$PROJECT_DIR$/Fog/Driver/requirements.txt" />
+        <option value="$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py" />
+        <option value="$PROJECT_DIR$/Fog/Driver/HomeAssistant/Dockerfile_Home_Assistant" />
+        <option value="$PROJECT_DIR$/Fog/Driver/HomeAssistant/requirements.txt" />
+        <option value="$PROJECT_DIR$/Fog/Driver/HomeAssistant/HomeAssistant_Driver.py" />
+        <option value="$PROJECT_DIR$/Fog/Driver/Driver_Base.py" />
+        <option value="$PROJECT_DIR$/Cloud/Registry/requirements.txt" />
+        <option value="$PROJECT_DIR$/Cloud/Registry/Registry.py" />
+        <option value="$PROJECT_DIR$/Fog/Driver/Dockerfile_Home_Assistant" />
+        <option value="$PROJECT_DIR$/Cloud/DBCollector/Dbreader.py" />
+        <option value="$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbreader" />
+        <option value="$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbwriter" />
+        <option value="$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py" />
+        <option value="$PROJECT_DIR$/Cloud/Registry/Dockerfile" />
+        <option value="$PROJECT_DIR$/Cloud/Collector/Collector.py" />
+        <option value="$PROJECT_DIR$/Cloud/Collector/Dockerfile" />
+        <option value="$PROJECT_DIR$/Cloud/API/Dockerfile" />
+        <option value="$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Fog_to_Cloud" />
+        <option value="$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Cloud_to_Fog" />
+        <option value="$PROJECT_DIR$/Fog/Filter/Dockerfile" />
       </list>
     </option>
   </component>
@@ -326,9 +278,9 @@
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="65" />
-    <option name="y" value="-4" />
-    <option name="width" value="1301" />
-    <option name="height" value="772" />
+    <option name="y" value="1" />
+    <option name="width" value="1295" />
+    <option name="height" value="748" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -346,6 +298,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
@@ -405,7 +358,7 @@
               <item name="API-Rabbitmq" type="462c0819:PsiDirectoryNode" />
               <item name="Fog" type="462c0819:PsiDirectoryNode" />
               <item name="Driver" type="462c0819:PsiDirectoryNode" />
-              <item name="config" type="462c0819:PsiDirectoryNode" />
+              <item name="HomeAssistant" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="API-Rabbitmq" type="b2602c69:ProjectViewProjectNode" />
@@ -417,12 +370,20 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/Fog/Driver/HomeAssistant" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/Fog/Filter" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -436,25 +397,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.API">
-    <configuration name="API" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Cloud/API" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="API-Rabbitmq" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Cloud/API/API.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-    </configuration>
+  <component name="RunManager" selected="Python.Dbwriter">
     <configuration name="Collector" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -491,20 +434,38 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
     </configuration>
-    <configuration name="HomeAssistant_Driver" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="Dbwriter" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Fog/Driver" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Cloud/DBCollector" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="API-Rabbitmq" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+    </configuration>
+    <configuration name="Forwarder_Cloud_to_Fog" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Cloud/Forwarder" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="API-Rabbitmq" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -528,19 +489,19 @@
       <option name="EMULATE_TERMINAL" value="false" />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.HomeAssistant_Driver" />
-      <item index="1" class="java.lang.String" itemvalue="Python.Dbreader" />
-      <item index="2" class="java.lang.String" itemvalue="Python.Registry" />
+      <item index="0" class="java.lang.String" itemvalue="Python.Forwarder_Cloud_to_Fog" />
+      <item index="1" class="java.lang.String" itemvalue="Python.Registry" />
+      <item index="2" class="java.lang.String" itemvalue="Python.Dbreader" />
       <item index="3" class="java.lang.String" itemvalue="Python.Collector" />
-      <item index="4" class="java.lang.String" itemvalue="Python.API" />
+      <item index="4" class="java.lang.String" itemvalue="Python.Dbwriter" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.API" />
-        <item index="1" class="java.lang.String" itemvalue="Python.HomeAssistant_Driver" />
+        <item index="0" class="java.lang.String" itemvalue="Python.Dbwriter" />
+        <item index="1" class="java.lang.String" itemvalue="Python.Collector" />
         <item index="2" class="java.lang.String" itemvalue="Python.Dbreader" />
-        <item index="3" class="java.lang.String" itemvalue="Python.Collector" />
-        <item index="4" class="java.lang.String" itemvalue="Python.Registry" />
+        <item index="3" class="java.lang.String" itemvalue="Python.Registry" />
+        <item index="4" class="java.lang.String" itemvalue="Python.Forwarder_Cloud_to_Fog" />
       </list>
     </recent_temporary>
   </component>
@@ -563,19 +524,17 @@
     </history-entry>
   </component>
   <component name="ToolWindowManager">
-    <frame x="64" y="-11" width="1303" height="780" extended-state="6" />
-    <editor active="true" />
+    <frame x="65" y="-4" width="1301" height="772" extended-state="6" />
     <layout>
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2490392" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32934132" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32974634" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.36336336" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24980783" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32974634" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27027026" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4069069" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -584,8 +543,9 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Concurrent Activities Diagram" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32882884" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Concurrent Activities Diagram" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32882884" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -602,196 +562,15 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="43" />
+      <option name="time" value="45" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="144">
-          <caret line="11" column="0" lean-forward="true" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/consumers.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="414">
-          <caret line="26" column="25" lean-forward="false" selection-start-line="26" selection-start-column="25" selection-end-line="26" selection-end-column="25" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/create_db_registry.py" />
-    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder_Fog_to_Cloud.py" />
-    <entry file="file://$PROJECT_DIR$/test/publisher.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
-          <caret line="20" column="23" lean-forward="true" selection-start-line="20" selection-start-column="23" selection-end-line="20" selection-end-column="23" />
-          <folding>
-            <element signature="e#22#78#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/kombu/mixins.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="162" column="12" lean-forward="false" selection-start-line="162" selection-start-column="8" selection-end-line="162" selection-end-column="12" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="17" column="0" lean-forward="false" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Fog/HomeAssistant_Driver.py" />
-    <entry file="file://$PROJECT_DIR$/Fog/Filter.py" />
-    <entry file="file://$PROJECT_DIR$/Cloud/create_db_registry.py" />
-    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder_Fog_to_Cloud.py" />
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/amqp/method_framing.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="164">
-          <caret line="165" column="0" lean-forward="false" selection-start-line="165" selection-start-column="0" selection-end-line="165" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/amqp/transport.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="114">
-          <caret line="257" column="0" lean-forward="false" selection-start-line="257" selection-start-column="0" selection-end-line="257" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/.PyCharm2017.2/system/python_stubs/-1247971764/builtins.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="212">
-          <caret line="5100" column="8" lean-forward="false" selection-start-line="5100" selection-start-column="8" selection-end-line="5100" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/paho/mqtt/client.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="245">
-          <caret line="1518" column="22" lean-forward="false" selection-start-line="1518" selection-start-column="22" selection-end-line="1518" selection-end-column="22" />
-          <folding>
-            <element signature="e#702#720#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/lib/python3.5/threading.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="159">
-          <caret line="1179" column="0" lean-forward="false" selection-start-line="1179" selection-start-column="0" selection-end-line="1179" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/drain_event_thread.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="421">
-          <caret line="42" column="29" lean-forward="true" selection-start-line="42" selection-start-column="29" selection-end-line="42" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/amqp/abstract_channel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="185">
-          <caret line="127" column="0" lean-forward="false" selection-start-line="127" selection-start-column="0" selection-end-line="127" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/kombu/connection.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="125">
-          <caret line="360" column="8" lean-forward="false" selection-start-line="360" selection-start-column="8" selection-end-line="360" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/mosquitto_pub.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="108">
-          <caret line="7" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/API/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/test/flask-api.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/mysql/connector/pooling.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="102" column="0" lean-forward="false" selection-start-line="102" selection-start-column="0" selection-end-line="102" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/lib/python3/dist-packages/apport_python_hook.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="115">
-          <caret line="46" column="0" lean-forward="false" selection-start-line="46" selection-start-column="0" selection-end-line="46" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/kombu/messaging.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="125">
-          <caret line="623" column="0" lean-forward="false" selection-start-line="623" selection-start-column="0" selection-end-line="623" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/amqp/channel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="127">
-          <caret line="1598" column="0" lean-forward="false" selection-start-line="1598" selection-start-column="0" selection-end-line="1598" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="133">
-          <caret line="766" column="0" lean-forward="false" selection-start-line="766" selection-start-column="0" selection-end-line="766" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/mysql/connector/connection.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="133">
-          <caret line="395" column="0" lean-forward="false" selection-start-line="395" selection-start-column="0" selection-end-line="395" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python3.5/dist-packages/influxdb/client.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="128">
-          <caret line="270" column="0" lean-forward="false" selection-start-line="270" selection-start-column="0" selection-end-line="270" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/test/consumers.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="18">
           <caret line="32" column="20" lean-forward="false" selection-start-line="32" selection-start-column="20" selection-end-line="32" selection-end-column="20" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -799,7 +578,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="146">
           <caret line="14" column="4" lean-forward="false" selection-start-line="14" selection-start-column="4" selection-end-line="14" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -807,9 +585,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="492">
           <caret line="39" column="12" lean-forward="true" selection-start-line="39" selection-start-column="12" selection-end-line="39" selection-end-column="12" />
-          <folding>
-            <element signature="e#22#78#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -821,15 +596,75 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/test/example.ini" />
+    <entry file="file://$PROJECT_DIR$/test/init.cfg" />
+    <entry file="file://$PROJECT_DIR$/test/config/init.cfg">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="18">
+          <caret line="1" column="21" lean-forward="false" selection-start-line="1" selection-start-column="21" selection-end-line="1" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/API/Api.py" />
+    <entry file="file://$PROJECT_DIR$/test/test_file.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3222">
+          <caret line="179" column="10" lean-forward="false" selection-start-line="179" selection-start-column="10" selection-end-line="179" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file:///usr/local/lib/python3.5/dist-packages/flask/app.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="216">
-          <caret line="1996" column="0" lean-forward="false" selection-start-line="1996" selection-start-column="0" selection-end-line="1996" selection-end-column="0" />
+        <state relative-caret-position="212">
+          <caret line="781" column="8" lean-forward="false" selection-start-line="781" selection-start-column="8" selection-end-line="781" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/config/configuration.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="162">
+          <caret line="9" column="0" lean-forward="false" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/API/ha" />
+    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Cloud_to_Fog/Forwarder_Cloud_to_Fog.py" />
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dbreader/Dbreader.py" />
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dbwriter/Dbwriter.py" />
+    <entry file="file://$PROJECT_DIR$/Cloud/API/requirements.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="18">
+          <caret line="1" column="12" lean-forward="true" selection-start-line="1" selection-start-column="12" selection-end-line="1" selection-end-column="12" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/example.ini">
+    <entry file="file://$PROJECT_DIR$/Cloud/Registry/create_db_registry.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="72">
+          <caret line="4" column="44" lean-forward="false" selection-start-line="28" selection-start-column="4" selection-end-line="28" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Filter/requirements.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="16" lean-forward="false" selection-start-line="0" selection-start-column="16" selection-end-line="0" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Filter/Filter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="126">
+          <caret line="9" column="0" lean-forward="false" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#11#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/a/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
@@ -837,233 +672,311 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/init.cfg">
+    <entry file="file://$PROJECT_DIR$/Fog/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="36">
-          <caret line="2" column="11" lean-forward="true" selection-start-line="2" selection-start-column="11" selection-end-line="2" selection-end-column="11" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/config/init.cfg">
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="18">
-          <caret line="1" column="21" lean-forward="false" selection-start-line="1" selection-start-column="21" selection-end-line="1" selection-end-column="21" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/test_file.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="249">
-          <caret line="179" column="7" lean-forward="true" selection-start-line="179" selection-start-column="7" selection-end-line="179" selection-end-column="7" />
-          <folding>
-            <marker date="1524113732066" expanded="true" signature="312:327" ph="SELECT * FRO... " />
-            <marker date="1524113732066" expanded="true" signature="312:328" ph="SELECT * FRO... " />
-            <marker date="1524113732066" expanded="true" signature="312:379" ph="SELECT * FRO... missing_value" />
-            <marker date="1524113732066" expanded="true" signature="530:709" ph="SELECT Thing... Thing" />
-            <marker date="1524113732066" expanded="true" signature="1452:1731" ph="SELECT Thing... Thing" />
-            <marker date="1524113732066" expanded="true" signature="1803:2084" ph="SELECT Thing... Thing" />
-            <marker date="1524113732066" expanded="true" signature="2151:2366" ph="SELECT Thing... Thing" />
-            <marker date="1524113732066" expanded="true" signature="2433:2702" ph="SELECT Item.... Item" />
-            <marker date="1524113732066" expanded="true" signature="2771:3042" ph="SELECT Item.... Item" />
-            <marker date="1524113732066" expanded="true" signature="3106:3315" ph="SELECT Item.... Item" />
-            <marker date="1524113732066" expanded="true" signature="4926:4933" ph="SELECT * FRO... Platform" />
-            <marker date="1524113732066" expanded="true" signature="4926:4942" ph="SELECT platf... Platform" />
-            <marker date="1524113732066" expanded="true" signature="4926:4983" ph="SELECT platf... Platform" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dbreader.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="33" column="0" lean-forward="true" selection-start-line="41" selection-start-column="9" selection-end-line="41" selection-end-column="14" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-            <marker date="1524030160371" expanded="true" signature="614:681" ph="SELECT * FRO... missing_value" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="11" column="0" lean-forward="true" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-          <folding>
-            <element signature="e#385#1499#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/API/Api.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="959">
-          <caret line="229" column="33" lean-forward="false" selection-start-line="229" selection-start-column="33" selection-end-line="229" selection-end-column="33" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Fog_to_Cloud.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="172">
-          <caret line="22" column="26" lean-forward="true" selection-start-line="22" selection-start-column="26" selection-end-line="22" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/Collector/Collector.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="149">
-          <caret line="104" column="0" lean-forward="true" selection-start-line="104" selection-start-column="0" selection-end-line="104" selection-end-column="0" />
-          <folding>
-            <element signature="e#487#665#0" expanded="false" />
-            <element signature="e#713#1401#0" expanded="false" />
-            <element signature="e#1458#2226#0" expanded="false" />
-            <element signature="e#2259#2923#0" expanded="false" />
-            <element signature="e#2966#3236#0" expanded="false" />
-            <element signature="e#3283#3408#0" expanded="false" />
-            <element signature="e#3426#4961#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-57">
-          <caret line="62" column="29" lean-forward="false" selection-start-line="62" selection-start-column="29" selection-end-line="62" selection-end-column="29" />
+          <caret line="1" column="19" lean-forward="true" selection-start-line="1" selection-start-column="19" selection-end-line="1" selection-end-column="19" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant_Driver.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="156" column="21" lean-forward="false" selection-start-line="156" selection-start-column="21" selection-end-line="156" selection-end-column="21" />
+        <state relative-caret-position="278">
+          <caret line="154" column="22" lean-forward="true" selection-start-line="154" selection-start-column="22" selection-end-line="154" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Cloud_to_Fog.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="8" column="43" lean-forward="true" selection-start-line="8" selection-start-column="43" selection-end-line="8" selection-end-column="43" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python3.5/dist-packages/kombu/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="157">
+          <caret line="39" column="25" lean-forward="false" selection-start-line="39" selection-start-column="25" selection-end-line="39" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant/Dockerfile_Home_Assistant">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="14" column="10" lean-forward="true" selection-start-line="14" selection-start-column="10" selection-end-line="14" selection-end-column="10" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant/requirements.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="36">
+          <caret line="2" column="16" lean-forward="true" selection-start-line="2" selection-start-column="16" selection-end-line="2" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant/config/configuration.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/HomeAssistant/HomeAssistant_Driver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="197">
+          <caret line="156" column="49" lean-forward="true" selection-start-line="156" selection-start-column="49" selection-end-line="156" selection-end-column="49" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
-            <element signature="e#2324#4426#0" expanded="false" />
-            <element signature="e#4473#4809#0" expanded="false" />
-            <element signature="e#4865#5103#0" expanded="false" />
-            <element signature="e#5173#5461#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Fog/Driver/Driver_Base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="108">
-          <caret line="118" column="8" lean-forward="false" selection-start-line="118" selection-start-column="8" selection-end-line="118" selection-end-column="8" />
+        <state relative-caret-position="246">
+          <caret line="132" column="17" lean-forward="false" selection-start-line="132" selection-start-column="17" selection-end-line="132" selection-end-column="17" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
-            <element signature="e#149#3093#0" expanded="false" />
-            <element signature="e#3156#3414#0" expanded="false" />
-            <element signature="e#3494#3810#0" expanded="false" />
-            <element signature="e#3872#4413#0" expanded="false" />
-            <element signature="e#4474#4531#0" expanded="false" />
-            <element signature="e#4596#5398#0" expanded="false" />
+            <element signature="e#3162#3420#0" expanded="false" />
+            <element signature="e#3500#3816#0" expanded="false" />
+            <element signature="e#3878#4419#0" expanded="false" />
+            <element signature="e#4480#4537#0" expanded="false" />
+            <element signature="e#4602#5404#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Fog/Driver/config/homeassistant.ini">
+    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Forwarder_Fog_to_Cloud.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="126">
-          <caret line="8" column="0" lean-forward="true" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+        <state relative-caret-position="54">
+          <caret line="3" column="0" lean-forward="false" selection-start-line="3" selection-start-column="0" selection-end-line="5" selection-end-column="37" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/API/API.py">
+    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="281" column="58" lean-forward="true" selection-start-line="281" selection-start-column="58" selection-end-line="281" selection-end-column="58" />
-          <folding>
-            <element signature="e#0#71#0" expanded="true" />
-            <element signature="e#1921#3242#0" expanded="false" />
-            <element signature="e#3297#4699#0" expanded="false" />
-            <element signature="e#4756#4929#0" expanded="false" />
-            <element signature="e#4978#6181#0" expanded="false" />
-            <element signature="e#6239#7387#0" expanded="false" />
-            <element signature="e#7445#7620#0" expanded="false" />
-            <element signature="e#7704#7905#0" expanded="false" />
-            <element signature="e#7989#9507#0" expanded="false" />
-            <element signature="e#9569#10430#0" expanded="false" />
-          </folding>
+        <state relative-caret-position="18">
+          <caret line="1" column="0" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="12" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Cloud/Registry/create_db_registry.py">
+    <entry file="file://$PROJECT_DIR$/Cloud/Registry/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="92">
-          <caret line="20" column="20" lean-forward="true" selection-start-line="20" selection-start-column="20" selection-end-line="20" selection-end-column="20" />
-          <folding>
-            <marker date="1524120848288" expanded="true" signature="271:476" ph="CREATE TABLE... IF" />
-            <marker date="1524120848288" expanded="true" signature="523:838" ph="CREATE TABLE... IF" />
-            <marker date="1524120848288" expanded="true" signature="862:1185" ph="CREATE TABLE... IF" />
-          </folding>
+        <state relative-caret-position="18">
+          <caret line="1" column="12" lean-forward="false" selection-start-line="1" selection-start-column="12" selection-end-line="1" selection-end-column="12" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Cloud/Registry/Registry.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-35">
-          <caret line="298" column="13" lean-forward="false" selection-start-line="298" selection-start-column="13" selection-end-line="298" selection-end-column="13" />
+        <state relative-caret-position="-5926">
+          <caret line="81" column="4" lean-forward="false" selection-start-line="81" selection-start-column="4" selection-end-line="81" selection-end-column="4" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
-            <element signature="e#728#949#0" expanded="false" />
-            <element signature="e#1011#2414#0" expanded="false" />
-            <element signature="e#2470#7260#0" expanded="false" />
-            <element signature="e#7338#7643#0" expanded="false" />
-            <element signature="e#7699#8370#0" expanded="false" />
-            <element signature="e#8409#9404#0" expanded="false" />
-            <element signature="e#9444#9705#0" expanded="false" />
-            <element signature="e#9750#10362#0" expanded="false" />
-            <element signature="e#10410#11588#0" expanded="false" />
-            <element signature="e#11638#12151#0" expanded="false" />
-            <element signature="e#17054#18701#0" expanded="false" />
-            <element signature="e#19339#19855#0" expanded="false" />
-            <marker date="1524141920718" expanded="true" signature="1096:1153" ph="SELECT last_... Platform" />
-            <marker date="1524141920718" expanded="true" signature="3139:3240" ph="UPDATE Platf... " />
-            <marker date="1524141920718" expanded="true" signature="3497:3555" ph="UPDATE Thing... " />
-            <marker date="1524141920718" expanded="true" signature="4210:4295" ph="UPDATE Thing... " />
-            <marker date="1524141920718" expanded="true" signature="4574:4629" ph="UPDATE Item " />
-            <marker date="1524141920718" expanded="true" signature="5049:5104" ph="UPDATE Item " />
-            <marker date="1524141920718" expanded="true" signature="5363:5409" ph="INSERT INTO Item... " />
-            <marker date="1524141920718" expanded="true" signature="5934:5992" ph="UPDATE Thing... " />
-            <marker date="1524141920718" expanded="true" signature="6169:6224" ph="UPDATE Item " />
-            <marker date="1524141920718" expanded="true" signature="6453:6500" ph="INSERT INTO Thing... " />
-            <marker date="1524141920718" expanded="true" signature="6900:6946" ph="INSERT INTO Item... " />
-            <marker date="1524141920718" expanded="true" signature="7897:7974" ph="UPDATE Platf... " />
-            <marker date="1524141920718" expanded="true" signature="8537:8593" ph="SELECT thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="8991:9047" ph="UPDATE Item " />
-            <marker date="1524141920718" expanded="true" signature="9135:9189" ph="UPDATE Thing... " />
-            <marker date="1524141920718" expanded="true" signature="9250:9310" ph="UPDATE Platf... " />
-            <marker date="1524141920718" expanded="true" signature="10592:10742" ph="SELECT platf... Platform" />
-            <marker date="1524141920718" expanded="true" signature="10815:10967" ph="SELECT platf... Platform" />
-            <marker date="1524141920718" expanded="true" signature="11035:11154" ph="SELECT platf... Platform" />
-            <marker date="1524141920718" expanded="true" signature="12587:12665" ph="UPDATE Platf... " />
-            <marker date="1524141920718" expanded="true" signature="12964:13011" ph="INSERT INTO Platform... " />
-            <marker date="1524141920718" expanded="true" signature="14152:14425" ph="SELECT Thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="14493:14646" ph="SELECT Thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="14493:14768" ph="SELECT Thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="14831:15042" ph="SELECT Thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="15104:15368" ph="SELECT Item.... Item" />
-            <marker date="1524141920718" expanded="true" signature="15433:15699" ph="SELECT Item.... Item" />
-            <marker date="1524141920718" expanded="true" signature="15759:15964" ph="SELECT Item.... Item" />
-            <marker date="1524141920718" expanded="true" signature="17140:17394" ph="SELECT Thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="17140:17396" ph="SELECT Thing... Thing" />
-            <marker date="1524141920718" expanded="true" signature="17485:17745" ph="SELECT Item.... Item" />
-            <marker date="1524141920718" expanded="true" signature="17485:17747" ph="SELECT Item.... Item" />
-            <marker date="1524141920718" expanded="false" signature="18738:19285" ph="..." />
+            <element signature="e#761#982#0" expanded="false" />
+            <element signature="e#7373#7678#0" expanded="false" />
+            <element signature="e#10445#11623#0" expanded="false" />
+            <element signature="e#17089#18736#0" expanded="false" />
+            <element signature="e#19374#19890#0" expanded="false" />
+            <element signature="e#19947#20579#0" expanded="false" />
+            <marker date="1524544248217" expanded="true" signature="1129:1186" ph="SELECT last_... Platform" />
+            <marker date="1524544248217" expanded="true" signature="3174:3275" ph="UPDATE Platf... " />
+            <marker date="1524544248217" expanded="true" signature="3532:3590" ph="UPDATE Thing... " />
+            <marker date="1524544248217" expanded="true" signature="4245:4330" ph="UPDATE Thing... " />
+            <marker date="1524544248217" expanded="true" signature="4609:4664" ph="UPDATE Item " />
+            <marker date="1524544248217" expanded="true" signature="5084:5139" ph="UPDATE Item " />
+            <marker date="1524544248217" expanded="true" signature="5398:5444" ph="INSERT INTO Item... " />
+            <marker date="1524544248217" expanded="true" signature="5969:6027" ph="UPDATE Thing... " />
+            <marker date="1524544248217" expanded="true" signature="6204:6259" ph="UPDATE Item " />
+            <marker date="1524544248217" expanded="true" signature="6488:6535" ph="INSERT INTO Thing... " />
+            <marker date="1524544248217" expanded="true" signature="6935:6981" ph="INSERT INTO Item... " />
+            <marker date="1524544248217" expanded="true" signature="7932:8009" ph="UPDATE Platf... " />
+            <marker date="1524544248217" expanded="true" signature="8572:8628" ph="SELECT thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="9026:9082" ph="UPDATE Item " />
+            <marker date="1524544248217" expanded="true" signature="9170:9224" ph="UPDATE Thing... " />
+            <marker date="1524544248217" expanded="true" signature="9285:9345" ph="UPDATE Platf... " />
+            <marker date="1524544248217" expanded="true" signature="10627:10777" ph="SELECT platf... Platform" />
+            <marker date="1524544248217" expanded="true" signature="10850:11002" ph="SELECT platf... Platform" />
+            <marker date="1524544248217" expanded="true" signature="11070:11189" ph="SELECT platf... Platform" />
+            <marker date="1524544248217" expanded="true" signature="12622:12700" ph="UPDATE Platf... " />
+            <marker date="1524544248217" expanded="true" signature="12999:13046" ph="INSERT INTO Platform... " />
+            <marker date="1524544248217" expanded="true" signature="14187:14460" ph="SELECT Thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="14528:14681" ph="SELECT Thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="14528:14803" ph="SELECT Thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="14866:15077" ph="SELECT Thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="15139:15403" ph="SELECT Item.... Item" />
+            <marker date="1524544248217" expanded="true" signature="15468:15734" ph="SELECT Item.... Item" />
+            <marker date="1524544248217" expanded="true" signature="15794:15999" ph="SELECT Item.... Item" />
+            <marker date="1524544248217" expanded="true" signature="17175:17429" ph="SELECT Thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="17175:17431" ph="SELECT Thing... Thing" />
+            <marker date="1524544248217" expanded="true" signature="17520:17780" ph="SELECT Item.... Item" />
+            <marker date="1524544248217" expanded="true" signature="17520:17782" ph="SELECT Item.... Item" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Fog/Filter/Filter.py">
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/requirements.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="29" column="30" lean-forward="true" selection-start-line="29" selection-start-column="30" selection-end-line="29" selection-end-column="30" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dbreader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1026">
+          <caret line="57" column="8" lean-forward="false" selection-start-line="57" selection-start-column="8" selection-end-line="57" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+            <marker date="1524545493082" expanded="true" signature="623:690" ph="SELECT * FRO... missing_value" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dbwriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="11" column="41" lean-forward="true" selection-start-line="11" selection-start-column="41" selection-end-line="11" selection-end-column="41" />
+          <folding>
+            <element signature="e#0#35#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Collector/requirements.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="12" lean-forward="true" selection-start-line="0" selection-start-column="12" selection-end-line="0" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Collector/Collector.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="363">
+          <caret line="131" column="17" lean-forward="false" selection-start-line="131" selection-start-column="12" selection-end-line="131" selection-end-column="17" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/API/API.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="36">
+          <caret line="2" column="0" lean-forward="false" selection-start-line="2" selection-start-column="0" selection-end-line="4" selection-end-column="26" />
+          <folding>
+            <element signature="e#3352#4754#0" expanded="false" />
+            <element signature="e#8044#9562#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/API/Dockerfile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="216">
+          <caret line="12" column="12" lean-forward="true" selection-start-line="12" selection-start-column="12" selection-end-line="12" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Collector/Dockerfile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="18" column="44" lean-forward="false" selection-start-line="18" selection-start-column="44" selection-end-line="18" selection-end-column="44" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbreader">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="18" column="30" lean-forward="false" selection-start-line="18" selection-start-column="30" selection-end-line="18" selection-end-column="30" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/DBCollector/Dockerfile_Dbwriter">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="13" column="21" lean-forward="false" selection-start-line="13" selection-start-column="21" selection-end-line="13" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Cloud_to_Fog">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="14" column="0" lean-forward="true" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Forwarder/Dockerfile_Fog_to_Cloud">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="14" column="0" lean-forward="false" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cloud/Registry/Dockerfile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/Dockerfile_Home_Assistant">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="20" column="1" lean-forward="false" selection-start-line="20" selection-start-column="1" selection-end-line="20" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Filter/Dockerfile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="14" column="35" lean-forward="true" selection-start-line="14" selection-start-column="35" selection-end-line="14" selection-end-column="35" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fog/Driver/configuration.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="162">
+          <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
           <folding />
         </state>
       </provider>
