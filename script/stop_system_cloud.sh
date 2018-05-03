@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #docker rm -f rabbitmq
 docker rm -f cloud-to-fog
 docker rm -f registry 

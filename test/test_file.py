@@ -182,7 +182,7 @@
 #     hii =3
 # print(hii)
 import requests
-url = 'http://127.0.0.1:5000/api/things/6e42cc61-9c44-490b-a10d-2d8367f6bba7-sensor.temperature'
+url = 'http://bb71ad43.ngrok.io/api/things/b9bc871c-07d7-40a3-b8da-608496d0f434-Temperature'
 response = requests.get(url).json()
 print(response[0]['items'][0]['item_state'])
-print(response[0]['items'][0]['item_state'] == 24)
+print(response[0]['items'][0]['item_state'] == 28)

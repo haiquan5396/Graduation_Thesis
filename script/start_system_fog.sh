@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #Forwarder Fog to Cloud
 docker run -dit --name fog-to-cloud -e "BROKER_CLOUD=$BROKER_CLOUD" -e "BROKER_FOG=$BROKER_FOG" haiquan5396/forwarder_fog_to_cloud:1.0
 

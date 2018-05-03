@@ -29,7 +29,7 @@ class HomeAssistant(Driver):
                 # VD: đèn là một thing và có item chính là bản thân cái đèn đó
                 item_type = thing_type
                 item_state = thing['state']
-                if item_type == 'sensor' and thing['entity_id'] == 'sensor.temperature':
+                if item_type == 'sensor':
                     item_state = int(thing['state'])
                 else:
                     item_state = thing['state']
