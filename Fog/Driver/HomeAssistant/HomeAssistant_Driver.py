@@ -96,7 +96,7 @@ class HomeAssistant(Driver):
         if hash_now.hexdigest() == hash_pre.hexdigest():
             return {
                 'have_change': False,
-                'new_info': None,
+                'new_info': new_info,
                 'platform_id': self.platform_id,
             }
 
@@ -154,6 +154,6 @@ class HomeAssistant(Driver):
 if __name__ == '__main__':
     CONFIG_PATH = "config/configuration.ini"
     # MODE = sys.argv[1]
-    MODE = 'PUSH'
+    MODE = 'PULL'
     home_assistant = HomeAssistant(CONFIG_PATH, MODE)
     home_assistant.run()

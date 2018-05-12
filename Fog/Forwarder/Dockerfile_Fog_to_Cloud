@@ -15,5 +15,5 @@ COPY ./Forwarder_Fog_to_Cloud.py /app
 
 CMD python3 Forwarder_Fog_to_Cloud.py ${BROKER_CLOUD} ${BROKER_FOG}
 
-#docker build -t haiquan5396/forwarder_fog_to_cloud:1.0 -f Dockerfile_Fog_to_Cloud .
-#docker run -it --name fog-cloud-test -e "BROKER_CLOUD=192.168.60.248" -e "BROKER_FOG=192.168.60.248" haiquan5396/forwarder_fog_to_cloud:1.0
+#docker build -t haiquan5396/forwarder_fog_to_cloud:1.2 -f Dockerfile_Fog_to_Cloud .
+#docker run -it --name fog-cloud-test -e "BROKER_CLOUD=192.168.60.248" -e "BROKER_FOG=192.168.60.248" haiquan5396/forwarder_fog_to_cloud:1.2

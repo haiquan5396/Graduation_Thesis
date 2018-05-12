@@ -1,34 +1,39 @@
 import json
 import paho.mqtt.client as mqtt
 import sys
-filter_topic_sub = 'driver/response/filter/api_get_states'
-
-filter_topic_pub = 'filter/response/forwarder/api_get_states'
-
-# BROKER_FOG = sys.argv[1]
-BROKER_FOG='localhost'
-client = mqtt.Client()
-
-client.connect(BROKER_FOG)
 
 
-def on_connect(client, userdata, flags, rc):
-    print("Connected to Mosquitto")
+class Filter():
+    def __init__(self, broker_fog):
+        self.client = mqtt.Client()
+        self.client.connect(broker_fog)
 
-    # Subscribing in on_connect() means that if we lose the connection and
-    # reconnect then subscriptions will be renewed.
-    client.subscribe(filter_topic_sub)
+    def on_connect(self, client, userdata, flags, rc):
+        print("Connected to Mosquitto")
+        filter_topic_sub = 'driver/response/filter/api_get_states'
+        self.client.subscribe(filter_topic_sub)
 
-# The callback for when a PUBLISH message is received from the server.
+    def filter_message(self, client, userdata, msg):
+        filter_topic_pub = 'filter/response/forwarder/api_get_states'
+        print(msg.payload.decode("utf-8"))
+        data = json.loads(msg.payload.decode('utf-8'))
+        data = json.dumps(data)
+        self.client.publish(filter_topic_pub, data)
 
+    def run(self):
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.filter_message
+        self.client.loop_forever()
 
-def filter_message(client, userdata, msg):
-    print(msg.payload.decode("utf-8"))
-    data = json.loads(msg.payload.decode('utf-8'))
-    data = json.dumps(data)
-    client.publish(filter_topic_pub, data)
+if __name__ == '__main__':
+    MODE_CODE = 'Develop'
+    # MODE_CODE = 'Deploy'
 
-client.on_connect = on_connect
-client.on_message = filter_message
+    if MODE_CODE == 'Develop':
+        BROKER_FOG = 'localhost'
+    else:
+        BROKER_FOG = sys.argv[1]
 
-client.loop_forever()
+    filter_fog = Filter(BROKER_FOG)
+    filter_fog.run()
+

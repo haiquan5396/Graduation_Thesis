@@ -22,5 +22,5 @@ EXPOSE 5000
 
 CMD python3 API.py ${BROKER_CLOUD}
 
-#docker build -t haiquan5396/api:1.0 .
-#docker run -it --name api -p 5000:5000 -e "BROKER_CLOUD=192.168.60.248" haiquan5396/api:1.0
+#docker build -t haiquan5396/api:1.2 .
+#docker run -it --name api -p 5000:5000 -e "BROKER_CLOUD=192.168.60.248" haiquan5396/api:1.2

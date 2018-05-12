@@ -15,5 +15,5 @@ COPY ./Dbwriter.py /app
 
 CMD python3 Dbwriter.py ${BROKER_CLOUD} ${HOST_INFLUXDB}
 
-#docker build -t haiquan5396/forwarder_fog_to_cloud:1.0 -f Dockerfile_Dbwrite .
-#docker run -it --name db-write-test -e "BROKER_CLOUD=192.168.60.248" -e "HOST_INFLUXDB=192.168.60.248" haiquan5396/db-write:1.0
+#docker build -t haiquan5396/db-write:1.2 -f Dockerfile_Dbwrite .
+#docker run -it --name db-write-test -e "BROKER_CLOUD=192.168.60.248" -e "HOST_INFLUXDB=192.168.60.248" haiquan5396/db-write:1.2

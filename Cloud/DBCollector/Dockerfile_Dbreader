@@ -15,5 +15,5 @@ COPY ./Dbreader.py /app
 
 CMD python3 Dbreader.py ${BROKER_CLOUD} ${HOST_INFLUXDB}
 
-#docker build -t haiquan5396/db-reader:1.0 -f Dockerfile_Dbreader .
-#docker run -it --name db-reader-test -e "BROKER_CLOUD=192.168.60.248" -e "HOST_INFLUXDB=192.168.60.248" haiquan5396/db-reader:1.0
+#docker build -t haiquan5396/db-reader:1.2 -f Dockerfile_Dbreader .
+#docker run -it --name db-reader-test -e "BROKER_CLOUD=192.168.60.248" -e "HOST_INFLUXDB=192.168.60.248" haiquan5396/db-reader:1.2

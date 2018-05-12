@@ -14,5 +14,5 @@ COPY ./Filter.py /app
 
 CMD python3 Filter.py ${BROKER_FOG}
 
-#docker build -t haiquan5396/filter:1.0 -f .
-#docker run -it --name filter-test -e "BROKER_CLOUD=192.168.60.248" haiquan5396/filter:1.0
+#docker build -t haiquan5396/filter:1.2 -f .
+#docker run -it --name filter-test -e "BROKER_CLOUD=192.168.60.248" haiquan5396/filter:1.2
