@@ -2,9 +2,15 @@ from influxdb import InfluxDBClient
 import json
 from kombu import Connection, Consumer, Exchange, Queue, exceptions
 import sys
+from datetime import datetime
 
+MODE_CODE = 'DEPLOY'
+# if MODE_CODE == 'DEPlOY':
 BROKER_CLOUD = sys.argv[1]
 HOST_INFLUXDB = sys.argv[2]
+# else:
+#     BROKER_CLOUD = "localhost"
+#     HOST_INFLUXDB = "localhost"
 clientDB = InfluxDBClient(HOST_INFLUXDB, 8086, 'root', 'root', 'Collector_DB')
 clientDB.create_database('Collector_DB')
 
@@ -34,7 +40,8 @@ def write_db(list_things):
                 },
                 'fields': {
                     'item_state': item['item_state'],
-                }
+                },
+                'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
 
             data_write_db.append(record)

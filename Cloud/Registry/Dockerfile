@@ -17,4 +17,4 @@ COPY ./Registry.py /app
 CMD python3 Registry.py ${BROKER_CLOUD} ${MODE} ${HOST_MYSQL}
 
 #docker build -t haiquan5396/registry:1.0 .
-#docker run -it --name registry-test -e "BROKER_CLOUD=192.168.60.248" -e "HOST_DB=192.168.60.248" -e "MODE=PUSH" haiquan5396/registry:1.0
+#docker run -it --name registry-test -e "BROKER_CLOUD=192.168.60.248" -e "HOST_MYSQL=192.168.60.248" -e "MODE=PUSH" haiquan5396/registry:1.0

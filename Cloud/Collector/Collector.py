@@ -3,9 +3,11 @@ import threading
 from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue, uuid
 from kombu.utils.compat import nested
 import sys
-BROKER_CLOUD = sys.argv[1]
-MODE = sys.argv[2] #PULL or PUSH
+# BROKER_CLOUD = sys.argv[1]
+# MODE = sys.argv[2] #PULL or PUSH
 
+BROKER_CLOUD="localhost"
+MODE = "PULL"
 producer_connection = Connection(BROKER_CLOUD)
 consumer_connection = Connection(BROKER_CLOUD)
 
@@ -133,6 +135,3 @@ def run():
 
 
 run()
-
-
-

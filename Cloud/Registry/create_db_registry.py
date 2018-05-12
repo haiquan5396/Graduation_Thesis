@@ -23,7 +23,7 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS Thing(
     thing_global_id VARCHAR(100) PRIMARY KEY,
     platform_id VARCHAR(50),
     thing_name VARCHAR(50),
-    thing_type VARCHAR(20),
+    thing_type VARCHAR(50),
     thing_local_id VARCHAR(50),
     location VARCHAR(30),
     thing_status VARCHAR(20),

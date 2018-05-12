@@ -3,9 +3,11 @@ import json
 from kombu import Connection, Queue, Exchange, Producer
 import sys
 
-BROKER_CLOUD = sys.argv[1]  #rabbitmq
-BROKER_FOG = sys.argv[2]    #mosquitto
-# MODE_COLLECT = "PULL"       #or PUSH
+# BROKER_CLOUD = sys.argv[1]  #rabbitmq
+# BROKER_FOG = sys.argv[2]    #mosquitto
+
+BROKER_CLOUD = 'localhost'  #rabbitmq
+BROKER_FOG = 'localhost'    #mosquitto
 
 # create Client Mosquitto
 client_fog = mqtt.Client()

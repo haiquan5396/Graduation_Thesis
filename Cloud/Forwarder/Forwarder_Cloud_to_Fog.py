@@ -4,9 +4,11 @@ from kombu import Connection, Queue, Exchange, Consumer, exceptions
 from kombu.utils.compat import nested
 import sys
 
-BROKER_CLOUD = sys.argv[1]  #rabbitmq
-BROKER_FOG = sys.argv[2]    #mosquitto
-# MODE_COLLECT = sys.argv[3]       #or PUSH
+# BROKER_CLOUD = sys.argv[1]  #rabbitmq
+# BROKER_FOG = sys.argv[2]    #mosquitto
+
+BROKER_CLOUD = 'localhost'  #rabbitmq
+BROKER_FOG = 'localhost'    #mosquitto
 
 #create Client Mosquitto
 client_fog = mqtt.Client()

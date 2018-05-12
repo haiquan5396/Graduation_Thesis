@@ -7,7 +7,7 @@ docker run -itd --name cloud-to-fog -e "BROKER_CLOUD=$BROKER_CLOUD" -e "BROKER_F
 
 #Registry
 
-docker run -itd --name registry -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_MYSQL=$HOST_MYSQL" -e "MODE=$MODE" haiquan5396/registry:1.0
+docker run -itd --name registry -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_MYSQL=$HOST_MYSQL" -e "MODE=$MODE" haiquan5396/registry:1.1
 
 #Collector
 
@@ -15,9 +15,9 @@ docker run -itd --name collector -e "BROKER_CLOUD=$BROKER_CLOUD" -e "MODE=$MODE"
 
 #DBCollector
 
-docker run -itd --name db-reader -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" haiquan5396/db-reader:1.0
-docker run -itd --name db-write -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" haiquan5396/db-writer:1.0
+docker run -itd --name db-reader -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" haiquan5396/db-reader:1.1
+docker run -itd --name db-write -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" haiquan5396/db-writer:1.1
 
 #API
 
-docker run -itd --name api -p 5000:5000 -e "host=$BROKER_CLOUD" haiquan5396/api:1.0
+docker run -itd --name api -p 5000:5000 -e "BROKER_CLOUD=$BROKER_CLOUD" haiquan5396/api:1.1

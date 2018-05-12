@@ -9,17 +9,34 @@ from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
 from kombu.utils.compat import nested
 import sys
 
-BROKER_CLOUD = sys.argv[1]  #rabbitmq
-MODE = sys.argv[2] # or PUSH or PULL
-TIME_INACTIVE_PLATFORM = 60
+MODE_CODE = 'DEVELOP'    #DEPLOY or DEVELOP
+
+# if MODE_CODE == 'DEPLOY':
+# BROKER_CLOUD = sys.argv[1]  #rabbitmq
+# MODE = sys.argv[2] # or PUSH or PULL
+#
+# dbconfig = {
+#   "database": "Registry_DB",
+#   "user":     "root",
+#   "host":     sys.argv[3],
+#   "passwd":   "root",
+#   "autocommit": "True"
+# }
+# else:
+#
+BROKER_CLOUD = 'localhost'  #rabbitmq
+MODE = 'PUSH' # or PUSH or PULL
 
 dbconfig = {
   "database": "Registry_DB",
   "user":     "root",
-  "host":     sys.argv[3],
+  "host":     '0.0.0.0',
   "passwd":   "root",
   "autocommit": "True"
 }
+
+
+TIME_INACTIVE_PLATFORM = 60
 
 cnxpool = MySQLConnectionPool(pool_name = "mypool", pool_size = 32, **dbconfig)
 
@@ -32,55 +49,49 @@ exchange = Exchange("IoT", type="direct")
 def get_connection_to_db():
     while True:
         try:
-            print("Get connection DB")
+            # print("Get connection DB")
             connection = cnxpool.get_connection()
             return connection
         except:
-            print("Can't get connection DB")
+            # print("Can't get connection DB")
             pass
 
 
 def update_config_changes_by_platform_id(platform_id):
-    cnx_1 = get_connection_to_db()
-    cursor_1 = cnx_1.cursor()
-    cursor_1.execute("""SELECT last_response FROM Platform WHERE platform_id = %s""", (platform_id,))
-    last_response = cursor_1.fetchone()
-    print("Check Time")
-    print(time.time() - last_response[0])
-    if (time.time() - last_response[0]) < TIME_INACTIVE_PLATFORM:
-        # Check last response
-        message = {
-            'reply_to': 'driver.response.registry.api_check_configuration_changes',
-            'platform_id': platform_id
-        }
 
-        #send request to Driver
-        queue = Queue(name='driver.request.api_check_configuration_changes', exchange=exchange, routing_key='driver.request.api_check_configuration_changes')
-        routing_key = 'driver.request.api_check_configuration_changes'
-        producer_connection.ensure_connection()
-        with Producer(producer_connection) as producer:
-            producer.publish(
-                json.dumps(message),
-                exchange=exchange.name,
-                routing_key=routing_key,
-                declare=[queue],
-                retry=True
-            )
+    message = {
+        'reply_to': 'driver.response.registry.api_check_configuration_changes',
+        'platform_id': platform_id
+    }
 
-    else:
-        # after TIME_DELETE_PLATFORM without response =>> mark platform is inactive
-        print("Mark inactive platform: {}".format(platform_id))
-        mark_inactive(str(platform_id))
+    #send request to Driver
+    queue = Queue(name='driver.request.api_check_configuration_changes', exchange=exchange, routing_key='driver.request.api_check_configuration_changes')
+    routing_key = 'driver.request.api_check_configuration_changes'
+    producer_connection.ensure_connection()
+    with Producer(producer_connection) as producer:
+        producer.publish(
+            json.dumps(message),
+            exchange=exchange.name,
+            routing_key=routing_key,
+            declare=[queue],
+            retry=True
+        )
 
-        send_notification_to_collector()
 
-    cnx_1.commit()
-    cursor_1.close()
-    cnx_1.close()
+def check_platform_active():
+    # print("Check active platform")
+    list_platforms = get_list_platforms("active")
+    for platform in list_platforms:
+        if (time.time() - platform['last_response']) > TIME_INACTIVE_PLATFORM:
+            # print("Mark inactive platform: {}".format(platform['platform_id']))
+            mark_inactive(str(platform['platform_id']))
+            send_notification_to_collector()
+
+    threading.Timer(2, check_platform_active).start()
 
 
 def update_changes_to_db(new_info, platform_id):
-    print("Update change of {} to database".format(platform_id))
+    # print("Update change of {} to database".format(platform_id))
     now_info = get_things_by_platform_id(platform_id, "all", "all")
     inactive_things = now_info[:]
     new_things = new_info[:]
@@ -120,12 +131,12 @@ def update_changes_to_db(new_info, platform_id):
 
                 if len(inactive_items) != 0:
                     # Item inactive
-                    print("Item inactive")
+                    # print("Item inactive")
                     for item_inactive in inactive_items:
                         cursor_1.execute("""UPDATE Item SET item_status=%s  WHERE item_global_id=%s""",
                                          ("inactive", item_inactive['item_global_id']))
                 if len(new_items) != 0:
-                    print("New Item ")
+                    # print("New Item ")
                     for item in new_items:
                         cursor_1.execute("""INSERT INTO Item VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                                          (item['item_global_id'], new_thing['thing_global_id'], item['item_name'],
@@ -135,7 +146,7 @@ def update_changes_to_db(new_info, platform_id):
                 break
     if len(inactive_things) != 0:
         # Thing inactive
-        print("Thing inactive")
+        # print("Thing inactive")
         for thing_inactive in inactive_things:
             cursor_1.execute("""UPDATE Thing SET thing_status=%s  WHERE thing_global_id=%s""",
                              ("inactive", thing_inactive['thing_global_id']))
@@ -146,26 +157,25 @@ def update_changes_to_db(new_info, platform_id):
     if len(new_things) != 0:
         # New things
 
-        print("New Thing")
+        # print("New Thing")
         for thing in new_things:
             cursor_1.execute("""INSERT INTO Thing VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                              (thing['thing_global_id'], platform_id, thing['thing_name'],
                               thing['thing_type'], thing['thing_local_id'], thing['location'], "active"))
-            print('Updated Things')
+            # print('Updated Things')
             for item in thing['items']:
-                print(item)
-                print("{}".format(item['item_global_id']))
+                # print("{}".format(item['item_global_id']))
                 cursor_1.execute("""INSERT INTO Item VALUES (%s,%s,%s,%s,%s,%s,%s)""",
                                  (item['item_global_id'], thing['thing_global_id'], item['item_name'],
                                   item['item_type'], item['item_local_id'], item['can_set_state'], "active"))
-                print('Updated Items')
+                # print('Updated Items')
     cnx_1.commit()
     cursor_1.close()
     cnx_1.close()
 
 
 def get_things_by_platform_id(platform_id, thing_status, item_status):
-    print("Get things in platform_id: {}".format(platform_id))
+    # print("Get things in platform_id: {}".format(platform_id))
     things_in_system = get_things(thing_status, item_status)
     things_in_platform = []
     for thing in things_in_system:
@@ -184,7 +194,8 @@ def handle_configuration_changes(body, message):
     cnx_2.commit()
 
     if body['have_change'] == False:
-        print('Platform have Id: {} no changes'.format(platform_id))
+        # print('Platform have Id: {} no changes'.format(platform_id))
+        pass
 
     else:
         print('Platform have Id: {} changed the configuration file'.format(platform_id))
@@ -217,7 +228,7 @@ def mark_inactive(platform_id):
 
 
 def update_all_config_changes():
-    print('Run Update All Configuration Changes')
+    # print('Run Update All Configuration Changes')
     list_platforms = get_list_platforms("active")
 
     for platform in list_platforms:
@@ -247,7 +258,7 @@ def send_notification_to_collector():
 
 
 def get_list_platforms(platform_status):
-    print('Get list platforms')
+    # print('Get list platforms')
     list_platforms = []
     cnx_1 = get_connection_to_db()
     cursor_1 = cnx_1.cursor()
@@ -274,7 +285,7 @@ def get_list_platforms(platform_status):
             "last_response": row[4],
             "platform_status": row[5]
         })
-    print(list_platforms)
+    # print(list_platforms)
     cursor_1.close()
     cnx_1.close()
     return list_platforms
@@ -299,7 +310,6 @@ def api_get_list_platforms(body, message):
 
 def api_add_platform(body, message):
     body = json.loads(body)
-    print(body)
     host = body['host']
     port = body['port']
     platform_name = body['platform_name']
@@ -337,8 +347,6 @@ def api_add_platform(body, message):
             declare=[queue_response],
             retry=True
         )
-    # writer database
-
 
     cnx_1.commit()
     cursor_1.close()
@@ -465,7 +473,7 @@ def get_thing_by_global_id(thing_global_id):
 
 
 def api_get_things(body, message):
-    print('Get All Things')
+    print('API Get All Things')
     reply_to = json.loads(body)['reply_to']
     thing_status = json.loads(body)['thing_status']
     item_status = json.loads(body)['item_status']
@@ -484,7 +492,7 @@ def api_get_things(body, message):
 
 
 def api_get_thing_by_global_id(body, message):
-    print('Get Thing by thing_global_id')
+    print('API Get Thing by thing_global_id')
     reply_to = json.loads(body)['reply_to']
     thing_global_id = json.loads(body)['thing_global_id']
 
@@ -534,6 +542,8 @@ queue_get_things_by_platform_id = Queue(name='registry.request.api_get_things_by
 
 if MODE == 'PULL':
     update_all_config_changes()
+
+check_platform_active()
 
 while 1:
     try:
