@@ -16,7 +16,7 @@ docker run -itd --name collector -e "BROKER_CLOUD=$BROKER_CLOUD" -e "MODE=$MODE"
 #DBCollector
 
 docker run -itd --name db-reader -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" haiquan5396/db-reader:1.2
-docker run -itd --name db-write -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" haiquan5396/db-writer:1.2
+docker run -itd --name db-write -e "BROKER_CLOUD=$BROKER_CLOUD" -e "HOST_INFLUXDB=$HOST_INFLUXDB" -v /etc/localtime:/etc/localtime:ro haiquan5396/db-writer:1.2
 
 #API
 

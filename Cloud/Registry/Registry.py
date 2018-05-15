@@ -511,6 +511,11 @@ class Registry():
             )
 
     def run(self):
+        list_platforms = self.get_list_platforms("all")
+        for platform in list_platforms:
+            self.update_config_changes_by_platform_id(platform['platform_id'])
+
+
         queue_get_things = Queue(name='registry.request.api_get_things', exchange=self.exchange,
                                  routing_key='registry.request.api_get_things')
         queue_get_list_platforms = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
@@ -554,8 +559,8 @@ class Registry():
 
 
 if __name__ == '__main__':
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = 'localhost'  # rabbitmq
@@ -584,9 +589,9 @@ if __name__ == '__main__':
           "autocommit": "True"
         }
 
-        TIME_INACTIVE_PLATFORM = sys.argv[4]
-        TIME_UPDATE_CONF = sys.argv[5]
-        TIME_CHECK_PLATFORM_ACTIVE = sys.argv[6]
+        TIME_INACTIVE_PLATFORM = int(sys.argv[4])
+        TIME_UPDATE_CONF = int(sys.argv[5])
+        TIME_CHECK_PLATFORM_ACTIVE = int(sys.argv[6])
 
     registry = Registry(BROKER_CLOUD, MODE, dbconfig, TIME_INACTIVE_PLATFORM, TIME_UPDATE_CONF, TIME_CHECK_PLATFORM_ACTIVE)
     registry.run()

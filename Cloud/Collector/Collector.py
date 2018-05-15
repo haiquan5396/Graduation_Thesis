@@ -126,8 +126,8 @@ class Collector():
 
 if __name__ == '__main__':
 
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = "localhost"
@@ -136,6 +136,7 @@ if __name__ == '__main__':
     else:
         BROKER_CLOUD = sys.argv[1]
         MODE = sys.argv[2] #PULL or PUSH
-        TIME_COLLECT = sys.argv[3]
+        TIME_COLLECT = int(sys.argv[3])
 
     collector = Collector(BROKER_CLOUD, MODE, TIME_COLLECT)
+    collector.run()

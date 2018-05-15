@@ -14,7 +14,7 @@ class DBwriter():
         self.exchange = Exchange("IoT", type="direct")
 
     def write_db(self, list_things):
-        print("Write to database")
+        # print("Write to database")
         data_write_db = []
         for thing in list_things['things']:
             for item in thing['items']:
@@ -42,10 +42,9 @@ class DBwriter():
                 data_write_db.append(record)
 
         self.clientDB.write_points(data_write_db)
-        print('Updated Database')
+        print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': Updated Database')
 
     def api_write_db(self, body, message):
-        print('vao api write')
         list_things = json.loads(body)
         self.write_db(list_things)
 
@@ -66,8 +65,8 @@ class DBwriter():
 
 if __name__ == '__main__':
 
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
 

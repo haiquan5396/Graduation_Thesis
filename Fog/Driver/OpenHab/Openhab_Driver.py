@@ -120,16 +120,23 @@ class OpenHAB(Driver):
             item = self.openhab.get_item_raw(item_to_thing)
 
             item_type = item['type']
-            thing_type = item_type
             item_name = item['name']
+            item_local_id = item_name
             thing_name = item_name
             # item_state = item['state']
             if (item_type == "Number"):
                 item_state = int(item['state'])
             else:
                 item_state = str(item['state'])
+            # transfer type
+            if item_local_id in ['Humidity', 'Temperature', 'Light']:
+                item_type = 'sensor'
+            elif item_local_id in ['Motion']:
+                item_type = 'binary_sensor'
+            elif 'Switch' in item_local_id:
+                item_type = 'light'
 
-            item_local_id = item_name
+            thing_type = item_type
             thing_local_id = thing_name
             thing_global_id = self.platform_id + '-' + thing_local_id
             item_global_id = self.platform_id + '-' + thing_local_id + '-' + item_local_id
@@ -236,14 +243,22 @@ class OpenHAB(Driver):
         # Those items above be converted to things
         for item_to_thing in remain_item_list:
             item = self.openhab.get_item_raw(item_to_thing)
-
             item_type = item['type']
-            thing_type = item_type
             item_name = item['name']
             thing_name = item_name
             item_state = item['state']
             item_local_id = item_name
             thing_local_id = thing_name
+
+            # transfer type
+            if item_local_id in ['Humidity', 'Temperature', 'Light']:
+                item_type = 'sensor'
+            elif item_local_id in ['Motion']:
+                item_type = 'binary_sensor'
+            elif 'Switch' in item_local_id:
+                item_type = 'light'
+
+            thing_type = item_type
             thing_global_id = self.platform_id + '-' + thing_local_id
             item_global_id = self.platform_id + '-' + thing_local_id + '-' + item_local_id
             location = 'unknow'
@@ -281,11 +296,11 @@ class OpenHAB(Driver):
         if hash_now.hexdigest() == hash_pre.hexdigest():
             return {
                 'have_change': False,
-                'new_info': None,
+                'new_info': now_info,
                 'platform_id': self.platform_id,
             }
         else:
-            pre_info = now_info
+            self.pre_info = now_info
             return {
                 'have_change': True,
                 'new_info': now_info,
