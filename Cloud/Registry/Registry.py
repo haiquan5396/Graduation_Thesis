@@ -206,7 +206,7 @@ class Registry():
 
     def update_all_config_changes(self):
         # print('Run Update All Configuration Changes')
-        list_platforms = self.get_list_platforms("active")
+        list_platforms = self.get_list_platforms("all")
 
         for platform in list_platforms:
             self.update_config_changes_by_platform_id(platform['platform_id'])
@@ -559,8 +559,8 @@ class Registry():
 
 
 if __name__ == '__main__':
-    # MODE_CODE = 'Develop'
-    MODE_CODE = 'Deploy'
+    MODE_CODE = 'Develop'
+    # MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = 'localhost'  # rabbitmq

@@ -4,13 +4,13 @@ import sys
 import socket
 import datetime
 
-# MODE_CODE = "Develop"
-MODE_CODE = "Deploy"
+MODE_CODE = "Develop"
+# MODE_CODE = "Deploy"
 
 if MODE_CODE == "Deploy":
     BROKER_CLOUD = sys.argv[1]
 else:
-    BROKER_CLOUD="localhost"
+    BROKER_CLOUD = "0.0.0.0"
 
 
 rabbitmq_connection = Connection(BROKER_CLOUD)
@@ -58,6 +58,20 @@ def api_get_thing_state_history(thing_status, item_status, start_time, end_time)
         return jsonify({'error': 'Incorrect data format, should be %Y-%m-%d %H:%M:%S'})
 
 
+@app.route('/api/history/item/<thing_global_id>/<item_global_id>/<start_time>/<end_time>', methods=['GET'])
+def api_get_item_state_history_by_global_id(thing_global_id, item_global_id, start_time, end_time):
+    try:
+        datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+        print("start")
+        datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
+        print("end")
+        return jsonify(get_item_state_history_by_global_id(thing_global_id, item_global_id, start_time, end_time))
+    except ValueError:
+        return jsonify({'error': 'Incorrect data format, should be %Y-%m-%d %H:%M:%S',
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'thing_global_id': thing_global_id,
+                        'item_global_id': item_global_id})
 
 
 @app.route('/api/history/things/<thing_global_id>/<start_time>/<end_time>', methods=['GET'])
@@ -118,6 +132,24 @@ def get_things_state_history_by_global_id(thing_global_id, start_time, end_time)
         return error
 
 
+def get_item_state_history_by_global_id(thing_global_id, item_global_id, start_time, end_time):
+    try:
+        list_thing_info = get_thing_info_by_global_id(thing_global_id)['things']
+        list_item = list_thing_info[0]['items'][:]
+        for idx_item, item in enumerate(list_thing_info[0]['items']):
+            if item['item_global_id'] != item_global_id:
+                print("trong if")
+                list_item.remove(item)
+        list_thing_info[0]['items'] = list_item[:]
+        list_things_state = get_things_state_history_by_list_thing(list_thing_info, start_time, end_time)
+        return list_things_state
+    except (KeyError, IndexError):
+        error = {
+            'error': "Can not connect to service"
+        }
+        return error
+
+
 def get_things_state_history_by_platform_id(platform_id, thing_status, item_status, start_time, end_time):
     try:
         list_things_info = get_things_info_by_platform_id(platform_id, thing_status, item_status)['things']
@@ -172,7 +204,7 @@ def get_items_state_history(list_item_global_id, start_time, end_time):
     queue_response = Queue(name='dbreader.response.api.api_get_item_state_history', exchange=exchange,
                            routing_key='dbreader.response.api.api_get_item_state_history')
     request_routing_key = 'dbreader.request.api_get_item_state_history'
-    message_response = request(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
+    message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
 
     # message_response = {"items": [{'item_global_id': "", 'item_state': "", 'last_changed': ""}]}
     return message_response
@@ -190,7 +222,7 @@ def get_list_platforms(platform_status):
         #request to api_get_list_platform of Registry
         queue_response = Queue(name='registry.response.api.api_get_list_platforms', exchange=exchange, routing_key='registry.response.api.api_get_list_platforms')
         request_routing_key = 'registry.request.api_get_list_platforms'
-        message_response = request(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
+        message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
         if 'list_platforms' in message_response:
             return message_response['list_platforms']
         else:
@@ -215,7 +247,7 @@ def get_things_info(thing_status, item_status):
         # request to api_get_things of Registry
         queue_response = Queue(name='registry.response.api.api_get_things', exchange=exchange, routing_key='registry.response.api.api_get_things')
         request_routing_key = 'registry.request.api_get_things'
-        message_response = request(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
+        message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
         return message_response
     else:
         return None
@@ -245,7 +277,7 @@ def get_items_state(list_item_global_id):
     queue_response = Queue(name='dbreader.response.api.api_get_item_state', exchange=exchange,
                            routing_key='dbreader.response.api.api_get_item_state')
     request_routing_key = 'dbreader.request.api_get_item_state'
-    message_response = request(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
+    message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
     # message_response = {"items": [{'item_global_id': "", 'item_state': "", 'last_changed': ""}]}
     return message_response
 
@@ -261,7 +293,7 @@ def get_thing_info_by_global_id(thing_global_id):
     # request to api_get_things of Registry
     queue_response = Queue(name='registry.response.api.api_get_thing_by_global_id', exchange=exchange, routing_key='registry.response.api.api_get_thing_by_global_id')
     request_routing_key = 'registry.request.api_get_thing_by_global_id'
-    message_response = request(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
+    message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
 
     return message_response
 
@@ -307,7 +339,7 @@ def get_things_info_by_platform_id(platform_id, thing_status, item_status):
         # # request to api_get_things of Registry
         queue_response = Queue(name='registry.response.api.api_get_things_by_platform_id', exchange=exchange, routing_key='registry.response.api.api_get_things_by_platform_id')
         request_routing_key = 'registry.request.api_get_things_by_platform_id'
-        message_response = request(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
+        message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key, queue_response)
         return message_response
     else:
         return None
@@ -364,13 +396,13 @@ def set_state(thing_global_id, item_global_id, new_state):
         )
 
 
-def request(conn, message_request, exchange, request_routing_key, queue_response):
+def request_service(conn, message_request, exchange_request, request_routing_key, queue_response):
     # request_routing_key = 'registry.request.api_get_things_by_platform_id'
     conn.ensure_connection()
     with Producer(conn) as producer:
         producer.publish(
             json.dumps(message_request),
-            exchange=exchange.name,
+            exchange=exchange_request.name,
             routing_key=request_routing_key,
             declare=[queue_response],
             retry=True
@@ -381,15 +413,21 @@ def request(conn, message_request, exchange, request_routing_key, queue_response
     def on_response(body, message):
         nonlocal message_response
         message_response = json.loads(body)
+    try:
 
-    with Consumer(conn, queues=queue_response, callbacks=[on_response], no_ack=True):
-        try:
-            while message_response is None:
-                conn.drain_events(timeout=2)
-        except socket.timeout:
-            return {
-                'error': 'Can not connect to service'
-            }
+        with Consumer(conn, queues=queue_response, callbacks=[on_response], no_ack=True):
+            try:
+                while message_response is None:
+                    conn.drain_events(timeout=2)
+            except socket.timeout:
+                return {
+                    'error': 'Can not connect to service'
+                }
+    except Exception:
+        print("cannot create Consumer: " + request_routing_key)
+        return {
+            'error': 'Cannot create Consumer'
+        }
 
     return message_response
 

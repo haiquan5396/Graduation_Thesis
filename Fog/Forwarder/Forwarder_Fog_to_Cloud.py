@@ -95,8 +95,8 @@ class ForwarderFogToCloud():
         self.client_fog.loop_forever()
 
 if __name__ == '__main__':
-    # MODE_CODE = 'Develop'
-    MODE_CODE = 'Deploy'
+    MODE_CODE = 'Develop'
+    # MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = 'localhost'  # rabbitmq

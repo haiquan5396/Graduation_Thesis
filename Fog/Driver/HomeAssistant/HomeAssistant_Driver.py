@@ -2,7 +2,7 @@ import json
 import requests
 import hashlib
 import time
-from Driver_Base import Driver
+from Fog.Driver.Driver_Base import Driver
 import sys
 
 
@@ -67,7 +67,7 @@ class HomeAssistant(Driver):
         for thing in response:
             # print(thing['entity_id'])
             thing_type = thing['entity_id'].split(".")[0]
-            if thing_type != 'group' and thing_type != 'automation':
+            if thing_type != 'group' and thing_type != 'automation' and thing_type != 'updater':
                 # Trong HomeAssistant do quản lý chỉ đến mức Thing nên ta coi các item của 1 thing là chính nó.
                 # VD: đèn là một thing và có item chính là bản thân cái đèn đó
 
@@ -153,7 +153,7 @@ class HomeAssistant(Driver):
 
 if __name__ == '__main__':
     CONFIG_PATH = "config/configuration.ini"
-    MODE = sys.argv[1]
-    # MODE = 'PULL'
+    # MODE = sys.argv[1]
+    MODE = 'PULL'
     home_assistant = HomeAssistant(CONFIG_PATH, MODE)
     home_assistant.run()
