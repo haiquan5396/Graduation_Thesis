@@ -23,7 +23,7 @@ class ForwarderCloudToFog():
         platform_id = body['platform_id']
         broker_fog_topic = "{}/request/api_check_configuration_changes".format(platform_id)
         try:
-            self.client_fog.publish(broker_fog_topic, json.dumps(body))
+            self.client_fog.publish(broker_fog_topic, json.dumps(body), qos=2)
         except:
             print("Error publish message in on_message_check_config")
         message.ack()
@@ -35,7 +35,7 @@ class ForwarderCloudToFog():
         platform_id = body['platform_id']
         broker_fog_topic = "{}/request/api_set_state".format(platform_id)
         try:
-            self.client_fog.publish(broker_fog_topic, json.dumps(body))
+            self.client_fog.publish(broker_fog_topic, json.dumps(body), qos=2)
         except:
             print("Error publish message in on_message_set_state function")
         message.ack()
@@ -46,7 +46,7 @@ class ForwarderCloudToFog():
         body = json.loads(body)
         broker_fog_topic = "registry/response/{}/{}".format(body['host'], body['port'])
         try:
-            self.client_fog.publish(broker_fog_topic, json.dumps(body))
+            self.client_fog.publish(broker_fog_topic, json.dumps(body), qos=2)
         except:
             print("Error publish message in on_message_add_platform function")
         message.ack()
@@ -76,13 +76,13 @@ class ForwarderCloudToFog():
 
         # declare rabbitmq resources
         queue_add_platform = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
-                                   routing_key='registry.response.driver.api_add_platform')
+                                   routing_key='registry.response.driver.api_add_platform', message_ttl=20)
         queue_check_config = Queue(name='driver.request.api_check_configuration_changes', exchange=self.exchange,
-                                   routing_key='driver.request.api_check_configuration_changes')
+                                   routing_key='driver.request.api_check_configuration_changes', message_ttl=20)
         queue_collect = Queue(name='driver.request.api_get_states', exchange=self.exchange,
-                              routing_key='driver.request.api_get_states')
+                              routing_key='driver.request.api_get_states', message_ttl=20)
         queue_set_state = Queue(name='driver.request.api_set_state', exchange=self.exchange,
-                                routing_key='driver.request.api_set_state')
+                                routing_key='driver.request.api_set_state', message_ttl=20)
 
         while 1:
             try:
@@ -98,6 +98,7 @@ class ForwarderCloudToFog():
                 print('Connection lost')
             except self.rabbitmq_connection.connection_errors:
                 print('Connection error')
+
 
 if __name__ == '__main__':
     MODE_CODE = 'Develop'

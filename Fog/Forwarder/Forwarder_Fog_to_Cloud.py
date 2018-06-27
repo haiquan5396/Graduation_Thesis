@@ -25,7 +25,7 @@ class ForwarderFogToCloud():
         reply_to = data['reply_to']
         routing_key = reply_to
         queue_name = reply_to
-        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key)
+        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
 
         self.rabbitmq_connection.ensure_connection()
         with Producer(self.rabbitmq_connection) as producer:
@@ -45,7 +45,7 @@ class ForwarderFogToCloud():
         reply_to = data['reply_to']
         routing_key = reply_to
         queue_name = reply_to
-        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key)
+        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
 
         self.rabbitmq_connection.ensure_connection()
         with Producer(self.rabbitmq_connection) as producer:
@@ -63,7 +63,7 @@ class ForwarderFogToCloud():
         data = json.loads(msg.payload.decode('utf-8'))
         routing_key = "registry.request.api_add_platform"
         queue_name = "registry.request.api_add_platform"
-        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key)
+        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
         self.rabbitmq_connection.ensure_connection()
         with Producer(self.rabbitmq_connection) as producer:
             producer.publish(

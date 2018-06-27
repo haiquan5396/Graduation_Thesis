@@ -50,15 +50,15 @@ class Dbreader():
             )
             # print("Done: {}".format(items))
 
-
     def api_get_item_state_history(self, body, message):
         print("API get_item_state_history")
         # Message {'list_item_global_id': [], 'reply_to': " ", }
-        list_item_global_id = json.loads(body)["list_item_global_id"]
+        list_global_id = json.loads(body)["list_global_id"]
         reply_to = json.loads(body)['reply_to']
         start_time = json.loads(body)["start_time"]
         end_time = json.loads(body)["end_time"]
-        items = self.get_item_state_history(list_item_global_id, start_time, end_time)
+        scale = json.loads(body)["scale"]
+        items = self.get_item_state_history(list_global_id, start_time, end_time, scale)
         message_response = {
             "items": items
         }
@@ -71,37 +71,121 @@ class Dbreader():
                 retry=True
             )
 
-    def get_item_state_history(self, list_item_global_id, start_time, end_time):
+    def get_item_state_history(self, list_global_id, start_time, end_time, scale):
         items = []
-        for item_global_id in list_item_global_id:
-            query_statement = """SELECT * FROM \"{}\" where time > \'{}\' AND time < \'{}\'""".format(item_global_id,
-                                                                                                      start_time,
-                                                                                                      end_time)
-            # print(query_statement)
-            query_result = self.clientDB.query(query_statement)
-            query_result = list(query_result.get_points())
-            if len(query_result) > 0:
-                item = {
-                    'item_global_id': query_result[0]['item_global_id'],
-                    'thing_global_id': query_result[0]['thing_global_id'],
-                    'history': []
-                }
+        print(scale)
+        for global_id in list_global_id:
+            item_global_id = global_id['item_global_id']
+            thing_global_id = global_id['thing_global_id']
+            query_statement_type_field = """SHOW FIELD KEYS ON \"Collector_DB\" FROM \"{}\"""".format(item_global_id)
+            query_result_type_field = self.clientDB.query(query_statement_type_field)
+            type_field = list(query_result_type_field.get_points())[0]['fieldType']
 
-                for item_history in query_result:
-                    item_state = {
-                        'last_changed': item_history['time'],
-                        'item_state': item_history['item_state']
-                    }
-                    item['history'].append(item_state)
-                items.append(item)
+            if scale == "0s":
+                if type_field == 'integer' or type_field == 'float':
+                    query_statement_history = """SELECT *  FROM \"{}\" where time >= \'{}\' AND time <= \'{}\'""".format(item_global_id, start_time, end_time)
+                    query_result_history = self.clientDB.query(query_statement_history)
+                    query_result_history = list(query_result_history.get_points())
+
+                    query_statement_global =  """SELECT MAX(\"item_state\") AS max_state, MIN(\"item_state\") AS min_state, MEAN(\"item_state\") AS average_state FROM \"{}\" where time >= \'{}\' AND time <= \'{}\'""".format(item_global_id, start_time, end_time)
+                    query_result_global = self.clientDB.query(query_statement_global)
+                    query_result_global = list(query_result_global.get_points())
+                    print(query_result_global[0]['max_state'], query_result_global[0]['min_state'], query_result_global[0]['average_state'])
+                    if len(query_result_history) > 0 and len(query_result_global) > 0:
+                        item = {
+                            'item_global_id': item_global_id,
+                            'thing_global_id': thing_global_id,
+                            'max_global': query_result_global[0]['max_state'],
+                            'min_global': query_result_global[0]['min_state'],
+                            'average_global': query_result_global[0]['average_state'],
+                            'history': []
+                        }
+
+                        for item_history in query_result_history:
+                            item_state = {
+                                'last_changed': item_history['time'],
+                                'item_state': item_history['item_state'],
+                            }
+                            item['history'].append(item_state)
+                        items.append(item)
+                else:
+
+                    query_statement_history = """SELECT *  FROM \"{}\" where time >= \'{}\' AND time <= \'{}\'""".format(item_global_id, start_time, end_time)
+                    query_result_history = self.clientDB.query(query_statement_history)
+                    query_result_history = list(query_result_history.get_points())
+
+                    if len(query_result_history) > 0:
+                        item = {
+                            'item_global_id': item_global_id,
+                            'thing_global_id': thing_global_id,
+                            'history': []
+                        }
+
+                        for item_history in query_result_history:
+                            item_state = {
+                                'last_changed': item_history['time'],
+                                'item_state': item_history['item_state'],
+                            }
+                            item['history'].append(item_state)
+                        items.append(item)
+            else:
+                if type_field == 'integer' or type_field == 'float':
+                    query_statement_history = """SELECT MODE(\"item_state\") AS item_state, MAX(\"item_state\") AS max_state, MIN(\"item_state\") AS min_state, MEAN(\"item_state\") AS average_state FROM \"{}\" WHERE time >= \'{}\' AND time <= \'{}\' GROUP BY time({}), thing_global_id""".format(item_global_id, start_time, end_time, scale)
+                    query_result_history = self.clientDB.query(query_statement_history)
+                    query_result_history = list(query_result_history.get_points())
+
+                    query_statement_global =  """SELECT MAX(\"item_state\") AS max_state, MIN(\"item_state\") AS min_state, MEAN(\"item_state\") AS average_state FROM \"{}\" where time >= \'{}\' AND time <= \'{}\'""".format(item_global_id, start_time, end_time)
+                    query_result_global = self.clientDB.query(query_statement_global)
+                    query_result_global = list(query_result_global.get_points())
+
+
+
+                    if len(query_result_history) > 0 and len(query_result_global) > 0:
+                        item = {
+                            'item_global_id': item_global_id,
+                            'thing_global_id': thing_global_id,
+                            'max_global': query_result_global[0]['max_state'],
+                            'min_global': query_result_global[0]['min_state'],
+                            'average_global': query_result_global[0]['average_state'],
+                            'history': []
+                        }
+                        for item_history in query_result_history:
+                            item_state = {
+                                'last_changed': item_history['time'],
+                                'item_state': item_history['item_state'],
+                                'min_state': item_history['min_state'],
+                                'max_state': item_history['max_state'],
+                                'average_state': item_history['average_state']
+                            }
+                            item['history'].append(item_state)
+                        items.append(item)
+                else:
+                    query_statement_history = """SELECT MODE(\"item_state\") AS item_state FROM \"{}\" WHERE time >= \'{}\' AND time <= \'{}\' GROUP BY time({}), thing_global_id""".format(item_global_id, start_time, end_time, scale)
+                    query_result_history = self.clientDB.query(query_statement_history)
+                    query_result_history = list(query_result_history.get_points())
+
+                    if len(query_result_history) > 0:
+                        item = {
+                            'item_global_id': item_global_id,
+                            'thing_global_id': thing_global_id,
+                            'history': []
+                        }
+                        for item_history in query_result_history:
+                            item_state = {
+                                'last_changed': item_history['time'],
+                                'item_state': item_history['item_state']
+                            }
+                            item['history'].append(item_state)
+                        items.append(item)
+
         return items
 
     def run(self):
 
         queue_get_item_state = Queue(name='dbreader.request.api_get_item_state', exchange=self.exchange,
-                                     routing_key='dbreader.request.api_get_item_state')
+                                     routing_key='dbreader.request.api_get_item_state', message_ttl=20)
         queue_get_item_state_history = Queue(name='dbreader.request.api_get_item_state_history', exchange=self.exchange,
-                                             routing_key='dbreader.request.api_get_item_state_history')
+                                             routing_key='dbreader.request.api_get_item_state_history', message_ttl=20)
         while 1:
             try:
                 self.consumer_connection.ensure_connection(max_retries=1)

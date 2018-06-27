@@ -30,7 +30,7 @@ class Registry():
 
         # send request to Driver
         queue = Queue(name='driver.request.api_check_configuration_changes', exchange=self.exchange,
-                      routing_key='driver.request.api_check_configuration_changes')
+                      routing_key='driver.request.api_check_configuration_changes', message_ttl=20)
         routing_key = 'driver.request.api_check_configuration_changes'
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
@@ -291,7 +291,7 @@ class Registry():
 
         # check connection and publish message
         queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
-                               routing_key='registry.response.driver.api_add_platform')
+                               routing_key='registry.response.driver.api_add_platform', message_ttl=20)
         routing_key = 'registry.response.driver.api_add_platform'
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
@@ -498,7 +498,7 @@ class Registry():
         }
 
         queue = Queue(name='collector.request.notification', exchange=self.exchange,
-                      routing_key='collector.request.notification')
+                      routing_key='collector.request.notification', message_ttl=20)
         routing_key = 'collector.request.notification'
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
@@ -517,18 +517,18 @@ class Registry():
 
 
         queue_get_things = Queue(name='registry.request.api_get_things', exchange=self.exchange,
-                                 routing_key='registry.request.api_get_things')
+                                 routing_key='registry.request.api_get_things', message_ttl=20)
         queue_get_list_platforms = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
-                                         routing_key='registry.request.api_get_list_platforms')
+                                         routing_key='registry.request.api_get_list_platforms', message_ttl=20)
         queue_add_platform = Queue(name='registry.request.api_add_platform', exchange=self.exchange,
-                                   routing_key='registry.request.api_add_platform')
+                                   routing_key='registry.request.api_add_platform', message_ttl=20)
         queue_check_config = Queue(name='driver.response.registry.api_check_configuration_changes', exchange=self.exchange,
-                                   routing_key='driver.response.registry.api_check_configuration_changes')
+                                   routing_key='driver.response.registry.api_check_configuration_changes', message_ttl=20)
         queue_get_thing_by_global_id = Queue(name='registry.request.api_get_thing_by_global_id', exchange=self.exchange,
-                                             routing_key='registry.request.api_get_thing_by_global_id')
+                                             routing_key='registry.request.api_get_thing_by_global_id', message_ttl=20)
         queue_get_things_by_platform_id = Queue(name='registry.request.api_get_things_by_platform_id',
                                                 exchange=self.exchange,
-                                                routing_key='registry.request.api_get_things_by_platform_id')
+                                                routing_key='registry.request.api_get_things_by_platform_id', message_ttl=20)
 
         if self.mode == 'PULL':
             self.update_all_config_changes()

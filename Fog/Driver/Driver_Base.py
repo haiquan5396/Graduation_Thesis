@@ -41,6 +41,7 @@ class Driver:
         topic_response = 'registry/response/' + self.host + '/' + self.port
 
         check_response = 0
+
         def handle_init(client, userdata, msg):
             print('Handle_init')
             nonlocal check_response
@@ -64,13 +65,13 @@ class Driver:
             self.clientMQTT.loop()
 
         if mode == 'PULL':
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
+            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states', qos=2)
             self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
 
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
+            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes', qos=2)
             self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
 
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state')
+        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state', qos=2)
         self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
         # self.clientMQTT.loop_stop()
 
@@ -107,13 +108,13 @@ class Driver:
         print("connected to Mosquitto")
         if self.platform_id is not None:
             if self.mode == 'PULL':
-                self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
+                self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states', qos=2)
                 self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
 
-                self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
+                self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes', qos=2)
                 self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
 
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state')
+            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state', qos=2)
             self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
 
     def run(self):

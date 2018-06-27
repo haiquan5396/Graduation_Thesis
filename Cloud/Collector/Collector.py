@@ -28,7 +28,7 @@ class Collector():
         }
 
         request_queue = Queue(name='driver.request.api_get_states', exchange=self.exchange,
-                              routing_key='driver.request.api_get_states')
+                              routing_key='driver.request.api_get_states', message_ttl=20)
         request_routing_key = 'driver.request.api_get_states'
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
@@ -47,7 +47,7 @@ class Collector():
         list_things = json.loads(body)
         # print(list_things)
         request_queue = Queue(name='dbwriter.request.api_write_db', exchange=self.exchange,
-                              routing_key='dbwriter.request.api_write_db')
+                              routing_key='dbwriter.request.api_write_db', message_ttl=20)
         request_routing_key = 'dbwriter.request.api_write_db'
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
@@ -60,6 +60,19 @@ class Collector():
             )
         print('Send new state to Dbwriter')
 
+        # send to monitor
+        request_queue = Queue(name='monitor.request.collector', exchange=self.exchange,
+                              routing_key='monitor.request.collector', message_ttl=20)
+        request_routing_key = 'monitor.request.collector'
+        with Producer(self.producer_connection) as producer:
+            producer.publish(
+                json.dumps(list_things),
+                exchange=self.exchange.name,
+                routing_key=request_routing_key,
+                declare=[request_queue],
+                retry=True
+            )
+
     def get_list_platforms(self):
         print("Get list platforms from Registry")
         message = {
@@ -68,7 +81,7 @@ class Collector():
         }
 
         queue = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
-                      routing_key='registry.request.api_get_list_platforms')
+                      routing_key='registry.request.api_get_list_platforms', message_ttl=20)
         routing_key = 'registry.request.api_get_list_platforms'
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
@@ -97,11 +110,11 @@ class Collector():
 
     def run(self):
         queue_notification = Queue(name='collector.request.notification', exchange=self.exchange,
-                                   routing_key='collector.request.notification')
+                                   routing_key='collector.request.notification', message_ttl=20)
         queue_list_platforms = Queue(name='registry.response.collector.api_get_list_platforms', exchange=self.exchange,
-                                     routing_key='registry.response.collector.api_get_list_platforms')
+                                     routing_key='registry.response.collector.api_get_list_platforms', message_ttl=20)
         queue_get_states = Queue(name='driver.response.collector.api_get_states', exchange=self.exchange,
-                                 routing_key='driver.response.collector.api_get_states')
+                                 routing_key='driver.response.collector.api_get_states', message_ttl=20)
 
         if self.mode == 'PULL':
             print("Collector use Mode: PULL Data")
@@ -123,6 +136,7 @@ class Collector():
                 print('Connection lost')
             except self.consumer_connection.connection_errors:
                 print('Connection error')
+
 
 if __name__ == '__main__':
 

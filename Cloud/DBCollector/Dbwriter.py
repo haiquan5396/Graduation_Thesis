@@ -50,7 +50,7 @@ class DBwriter():
 
     def run(self):
         queue_write_db = Queue(name='dbwriter.request.api_write_db', exchange=self.exchange,
-                               routing_key='dbwriter.request.api_write_db')
+                               routing_key='dbwriter.request.api_write_db', message_ttl=20)
         while 1:
             try:
                 self.consumer_connection.ensure_connection(max_retries=1)

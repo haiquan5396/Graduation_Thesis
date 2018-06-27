@@ -307,9 +307,10 @@ class OpenHAB(Driver):
                 'platform_id': self.platform_id,
             }
 
-    def set_states(self, thing_local_id, item_local_id, thing_type, item_type, state):
+    def set_state(self, thing_type, thing_local_id, location, thing_name,
+                  item_type, item_local_id, item_name, new_state):
         item = self.openhab.get_item(item_local_id)
-        item.command(state)
+        item.command(new_state)
 
 
 
