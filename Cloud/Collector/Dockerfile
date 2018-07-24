@@ -6,13 +6,15 @@ ENV BROKER_CLOUD localhost
 ENV MODE PULL
 ENV TIME_COLLECT 5
 
-COPY ./requirements.txt /app/requirements.txt
+COPY Cloud/Collector/requirements.txt /app/requirements.txt
+
+COPY Performance_Monitoring/message_monitor.py /app/Performance_Monitoring/message_monitor.py
 
 WORKDIR /app
 
 RUN pip3 install -r requirements.txt
 
-COPY ./Collector.py /app
+COPY Cloud/Collector/Collector.py /app
 
 CMD python3 Collector.py ${BROKER_CLOUD} ${MODE} ${TIME_COLLECT}
 

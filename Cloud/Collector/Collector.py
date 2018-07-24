@@ -3,6 +3,7 @@ import threading
 from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue, uuid
 from kombu.utils.compat import nested
 import sys
+from Performance_Monitoring.message_monitor import MessageMonitor
 
 
 class Collector():
@@ -13,6 +14,7 @@ class Collector():
         self.consumer_connection = Connection(broker_cloud)
         self.exchange = Exchange("IoT", type="direct")
         self.list_platform_id = []
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
     def collect(self):
         print("Collect the states of the devices")
@@ -26,6 +28,8 @@ class Collector():
             'reply_to': 'driver.response.collector.api_get_states',
             'platform_id': platform_id
         }
+
+        message_request['message_monitor'] = self.message_monitor.monitor({}, 'collector', 'collect_by_platform_id')
 
         request_queue = Queue(name='driver.request.api_get_states', exchange=self.exchange,
                               routing_key='driver.request.api_get_states', message_ttl=20)
@@ -46,6 +50,8 @@ class Collector():
         # print(ast.literal_eval(msg.payload.decode('utf-8')))
         list_things = json.loads(body)
         # print(list_things)
+        list_things['message_monitor'] = self.message_monitor.monitor(list_things, 'collector', 'handle_collect_by_platform_id')
+
         request_queue = Queue(name='dbwriter.request.api_write_db', exchange=self.exchange,
                               routing_key='dbwriter.request.api_write_db', message_ttl=20)
         request_routing_key = 'dbwriter.request.api_write_db'
@@ -80,6 +86,8 @@ class Collector():
             'platform_status': "active"
         }
 
+        message['message_monitor'] = self.message_monitor.monitor({}, 'collector', 'get_list_platforms')
+
         queue = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
                       routing_key='registry.request.api_get_list_platforms', message_ttl=20)
         routing_key = 'registry.request.api_get_list_platforms'
@@ -94,13 +102,15 @@ class Collector():
             )
 
     def handle_get_list(self, body, message):
-        list_platforms = json.loads(body)['list_platforms']
+        body = json.loads(body)
+        list_platforms = body['list_platforms']
         temp = []
         for platform in list_platforms:
             temp.append(platform['platform_id'])
 
         self.list_platform_id = temp
-
+        print(body)
+        self.message_monitor.end_message(body, 'collector', 'handle_get_list')
         print('Updated list of platform_id: ', str(self.list_platform_id))
 
     def handle_notification(self, body, message):
@@ -140,8 +150,8 @@ class Collector():
 
 if __name__ == '__main__':
 
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = "localhost"

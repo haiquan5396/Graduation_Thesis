@@ -2,12 +2,13 @@ import paho.mqtt.client as mqtt
 import json
 from kombu import Connection, Queue, Exchange, Producer
 import sys
-
+from Performance_Monitoring.message_monitor import MessageMonitor
 # BROKER_CLOUD = sys.argv[1]  #rabbitmq
 # BROKER_FOG = sys.argv[2]    #mosquitto
 
 BROKER_CLOUD = 'localhost'  #rabbitmq
 BROKER_FOG = 'localhost'    #mosquitto
+
 
 class ForwarderFogToCloud():
     def __init__(self, broker_cloud, broker_fog):
@@ -17,6 +18,7 @@ class ForwarderFogToCloud():
         # Creat connection to rabbitmq cloud
         self.rabbitmq_connection = Connection(broker_cloud)
         self.exchange = Exchange('IoT', type='direct')
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
     def on_message_registry(self, client, userdata, msg):
         print("Forward to Registry api_check_configuration_changes")
@@ -25,8 +27,10 @@ class ForwarderFogToCloud():
         reply_to = data['reply_to']
         routing_key = reply_to
         queue_name = reply_to
-        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
 
+        data['message_monitor'] = self.message_monitor.monitor(data, 'fog_to_cloud', 'on_message_registry')
+        print(data)
+        queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
         self.rabbitmq_connection.ensure_connection()
         with Producer(self.rabbitmq_connection) as producer:
             producer.publish(
@@ -45,6 +49,9 @@ class ForwarderFogToCloud():
         reply_to = data['reply_to']
         routing_key = reply_to
         queue_name = reply_to
+
+        data['message_monitor'] = self.message_monitor.monitor(data, 'fog_to_cloud', 'on_message_filter')
+
         queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
 
         self.rabbitmq_connection.ensure_connection()
@@ -63,6 +70,9 @@ class ForwarderFogToCloud():
         data = json.loads(msg.payload.decode('utf-8'))
         routing_key = "registry.request.api_add_platform"
         queue_name = "registry.request.api_add_platform"
+
+        data['message_monitor'] = self.message_monitor.monitor(data, 'fog_to_cloud', 'on_message_add_platform')
+
         queue = Queue(name=queue_name, exchange=self.exchange, routing_key=routing_key, message_ttl=20)
         self.rabbitmq_connection.ensure_connection()
         with Producer(self.rabbitmq_connection) as producer:
@@ -95,8 +105,8 @@ class ForwarderFogToCloud():
         self.client_fog.loop_forever()
 
 if __name__ == '__main__':
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = 'localhost'  # rabbitmq

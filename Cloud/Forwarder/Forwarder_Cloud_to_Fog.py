@@ -3,18 +3,21 @@ import json
 from kombu import Connection, Queue, Exchange, Consumer, exceptions
 from kombu.utils.compat import nested
 import sys
+from Performance_Monitoring.message_monitor import MessageMonitor
 
 
-class ForwarderCloudToFog():
+class ForwarderCloudToFog:
     def __init__(self, broker_cloud, broker_fog):
         # create Client Mosquitto
         self.client_fog = mqtt.Client()
-        self.client_fog.connect(BROKER_FOG)
+        self.client_fog.connect(BROKER_FOG, keepalive=20)
         self.client_fog.loop_start()
 
         # Creat connection to rabbitmq cloud
         self.rabbitmq_connection = Connection(BROKER_CLOUD)
         self.exchange = Exchange('IoT', type='direct')
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
+
 
     # Registry request to collect configuration
     def on_message_check_config(self, body, message):
@@ -22,8 +25,10 @@ class ForwarderCloudToFog():
         body = json.loads(body)
         platform_id = body['platform_id']
         broker_fog_topic = "{}/request/api_check_configuration_changes".format(platform_id)
+        body['message_monitor'] = self.message_monitor.monitor(body, 'cloud_to_fog', 'on_message_check_config')
+
         try:
-            self.client_fog.publish(broker_fog_topic, json.dumps(body), qos=2)
+            self.client_fog.publish(broker_fog_topic, json.dumps(body))
         except:
             print("Error publish message in on_message_check_config")
         message.ack()
@@ -34,6 +39,8 @@ class ForwarderCloudToFog():
         body = json.loads(body)
         platform_id = body['platform_id']
         broker_fog_topic = "{}/request/api_set_state".format(platform_id)
+        body['message_monitor'] = self.message_monitor.monitor(body, 'cloud_to_fog', 'on_message_set_state')
+
         try:
             self.client_fog.publish(broker_fog_topic, json.dumps(body), qos=2)
         except:
@@ -45,8 +52,10 @@ class ForwarderCloudToFog():
         print("Forward from Registry to Driver: add platform")
         body = json.loads(body)
         broker_fog_topic = "registry/response/{}/{}".format(body['host'], body['port'])
+        body['message_monitor'] = self.message_monitor.monitor(body, 'cloud_to_fog', 'on_message_add_platform')
+
         try:
-            self.client_fog.publish(broker_fog_topic, json.dumps(body), qos=2)
+            self.client_fog.publish(broker_fog_topic, json.dumps(body))
         except:
             print("Error publish message in on_message_add_platform function")
         message.ack()
@@ -57,6 +66,8 @@ class ForwarderCloudToFog():
         body = json.loads(body)
         platform_id = body['platform_id']
         broker_fog_topic = "{}/request/api_get_states".format(platform_id)
+        body['message_monitor'] = self.message_monitor.monitor(body, 'cloud_to_fog', 'on_message_collect')
+
         try:
             self.client_fog.publish(broker_fog_topic, json.dumps(body))
         except:
@@ -101,8 +112,8 @@ class ForwarderCloudToFog():
 
 
 if __name__ == '__main__':
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = 'localhost'  # rabbitmq

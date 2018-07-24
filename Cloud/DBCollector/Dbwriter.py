@@ -3,15 +3,17 @@ import json
 from kombu import Connection, Consumer, Exchange, Queue, exceptions
 import sys
 from datetime import datetime
+from Performance_Monitoring.message_monitor import MessageMonitor
 
 
-class DBwriter():
+class DBwriter:
     def __init__(self, broker_cloud, host_influxdb):
         self.clientDB = InfluxDBClient(host_influxdb, 8086, 'root', 'root', 'Collector_DB')
         self.clientDB.create_database('Collector_DB')
 
         self.consumer_connection = Connection(broker_cloud)
         self.exchange = Exchange("IoT", type="direct")
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
     def write_db(self, list_things):
         # print("Write to database")
@@ -47,6 +49,7 @@ class DBwriter():
     def api_write_db(self, body, message):
         list_things = json.loads(body)
         self.write_db(list_things)
+        self.message_monitor.end_message(list_things, 'write_db', 'api_write_db')
 
     def run(self):
         queue_write_db = Queue(name='dbwriter.request.api_write_db', exchange=self.exchange,
@@ -65,8 +68,8 @@ class DBwriter():
 
 if __name__ == '__main__':
 
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
 

@@ -4,13 +4,15 @@ MAINTAINER HaiQuan "haiquan5396@gmail.com"
 
 ENV BROKER_FOG localhost
 
-COPY ./requirements.txt /app/requirements.txt
+COPY Fog/Filter/requirements.txt /app/requirements.txt
+
+COPY Performance_Monitoring/message_monitor.py /app/Performance_Monitoring/message_monitor.py
 
 WORKDIR /app
 
 RUN pip3 install -r requirements.txt
 
-COPY ./Filter.py /app
+COPY Fog/Filter/Filter.py /app
 
 CMD python3 Filter.py ${BROKER_FOG}
 

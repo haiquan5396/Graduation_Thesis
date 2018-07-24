@@ -6,9 +6,10 @@ from mysql.connector.pooling import MySQLConnectionPool
 from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
 from kombu.utils.compat import nested
 import sys
+from Performance_Monitoring.message_monitor import MessageMonitor
 
 
-class Registry():
+class Registry(MessageMonitor):
     def __init__(self, broker_cloud, mode, db_config, time_inactive_platform, time_update_conf, time_check_platform_active):
         self.time_update_conf = time_update_conf
         self.time_check_platform_active = time_check_platform_active
@@ -20,6 +21,7 @@ class Registry():
         self.consumer_connection = Connection(broker_cloud)
 
         self.exchange = Exchange("IoT", type="direct")
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
     def update_config_changes_by_platform_id(self, platform_id):
 
@@ -28,6 +30,7 @@ class Registry():
             'platform_id': platform_id
         }
 
+        message['message_monitor'] = self.message_monitor.monitor({}, 'registry', 'update_config_changes_by_platform_id')
         # send request to Driver
         queue = Queue(name='driver.request.api_check_configuration_changes', exchange=self.exchange,
                       routing_key='driver.request.api_check_configuration_changes', message_ttl=20)
@@ -181,6 +184,8 @@ class Registry():
         cnx_2.commit()
         cursor_2.close()
         cnx_2.close()
+        self.message_monitor.end_message(body, 'registry', 'handle_configuration_changes')
+
 
     def mark_inactive(self, platform_id):
         print('Mark Thing and Item inactive')
@@ -248,11 +253,14 @@ class Registry():
 
     def api_get_list_platforms(self, body, message):
         print("API get list platform with platform_status")
-        platform_status = json.loads(body)['platform_status']
-        reply_to = json.loads(body)['reply_to']
-        message_response = {
-            "list_platforms": self.get_list_platforms(platform_status)
-        }
+        body = json.loads(body)
+        platform_status = body['platform_status']
+        reply_to = body['reply_to']
+
+        message_response = dict()
+        message_response['list_platforms'] = self.get_list_platforms(platform_status)
+
+        message_response['message_monitor'] = self.message_monitor.monitor(body, 'registry', 'api_get_list_platforms')
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
             producer.publish(
@@ -282,12 +290,14 @@ class Registry():
             cursor_1.execute("""INSERT INTO Platform VALUES (%s,%s,%s,%s,%s,%s)""",
                              (platform_id, platform_name, host, port, time.time(), "active"))
 
-        message_response = {
+        message_response = dict({
             'platform_id': platform_id,
             'host': host,
             'port': port,
             'platform_name': platform_name
-        }
+        })
+
+        message_response['message_monitor'] = self.message_monitor.monitor(body, 'registry', 'api_add_platform')
 
         # check connection and publish message
         queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
@@ -426,13 +436,18 @@ class Registry():
 
     def api_get_things(self, body, message):
         print('API Get All Things')
-        reply_to = json.loads(body)['reply_to']
-        thing_status = json.loads(body)['thing_status']
-        item_status = json.loads(body)['item_status']
+        body = json.loads(body)
+        reply_to = body['reply_to']
+        thing_status = body['thing_status']
+        item_status = body['item_status']
         things = self.get_things(thing_status, item_status)
-        message_response = {
+
+        message_response = dict({
             'things': things
-        }
+        })
+
+        message_response['message_monitor'] = self.message_monitor.monitor(body, 'registry', 'api_get_things')
+
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
             producer.publish(
@@ -444,14 +459,17 @@ class Registry():
 
     def api_get_thing_by_global_id(self, body, message):
         print('API Get Thing by thing_global_id')
-        reply_to = json.loads(body)['reply_to']
-        thing_global_id = json.loads(body)['thing_global_id']
+        body = json.loads(body)
+        reply_to = body['reply_to']
+        thing_global_id = body['thing_global_id']
 
         things = self.get_thing_by_global_id(thing_global_id)
 
         message_response = {
             'things': things
         }
+        message_response['message_monitor'] = self.message_monitor.monitor(body, 'registry', 'api_get_thing_by_global_id')
+
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
             producer.publish(
@@ -463,15 +481,18 @@ class Registry():
 
     def api_get_things_by_platform_id(self, body, message):
         print('Get Thing by platform_id')
-        reply_to = json.loads(body)['reply_to']
-        platform_id = json.loads(body)['platform_id']
-        thing_status = json.loads(body)['thing_status']
-        item_status = json.loads(body)['item_status']
+        body = json.loads(body)
+        reply_to = body['reply_to']
+        platform_id = body['platform_id']
+        thing_status = body['thing_status']
+        item_status = body['item_status']
         things = self.get_things_by_platform_id(platform_id, thing_status, item_status)
 
         message_response = {
             'things': things
         }
+        message_response['message_monitor'] = self.message_monitor.monitor(body, 'registry', 'api_get_things_by_platform_id')
+
         self.producer_connection.ensure_connection()
         with Producer(self.producer_connection) as producer:
             producer.publish(
@@ -497,6 +518,8 @@ class Registry():
             'notification': 'Have Platform_id change'
         }
 
+        message['message_monitor'] = self.message_monitor.monitor({}, 'registry', 'send_notification_to_collector')
+
         queue = Queue(name='collector.request.notification', exchange=self.exchange,
                       routing_key='collector.request.notification', message_ttl=20)
         routing_key = 'collector.request.notification'
@@ -514,7 +537,6 @@ class Registry():
         list_platforms = self.get_list_platforms("all")
         for platform in list_platforms:
             self.update_config_changes_by_platform_id(platform['platform_id'])
-
 
         queue_get_things = Queue(name='registry.request.api_get_things', exchange=self.exchange,
                                  routing_key='registry.request.api_get_things', message_ttl=20)
@@ -559,8 +581,8 @@ class Registry():
 
 
 if __name__ == '__main__':
-    MODE_CODE = 'Develop'
-    # MODE_CODE = 'Deploy'
+    # MODE_CODE = 'Develop'
+    MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_CLOUD = 'localhost'  # rabbitmq
@@ -575,8 +597,8 @@ if __name__ == '__main__':
         }
 
         TIME_INACTIVE_PLATFORM = 60     # Time when platform is marked inactive
-        TIME_UPDATE_CONF = 2            # Time when registry send request update conf to Driver
-        TIME_CHECK_PLATFORM_ACTIVE = 2  # Time when check active_platform in system
+        TIME_UPDATE_CONF = 5            # Time when registry send request update conf to Driver
+        TIME_CHECK_PLATFORM_ACTIVE = 30  # Time when check active_platform in system
     else:
         BROKER_CLOUD = sys.argv[1]  #rabbitmq
         MODE = sys.argv[2] # or PUSH or PULL

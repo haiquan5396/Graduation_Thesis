@@ -9,13 +9,14 @@ ENV TIME_INACTIVE_PLATFORM 60
 ENV TIME_UPDATE_CONF  10
 ENV TIME_CHECK_PLATFORM_ACTIVE  60
 
-COPY ./requirements.txt /app/requirements.txt
+COPY Cloud/Registry/requirements.txt /app/requirements.txt
+COPY Performance_Monitoring/message_monitor.py /app/Performance_Monitoring/message_monitor.py
 
 WORKDIR /app
 
 RUN pip3 install -r requirements.txt
 
-COPY ./Registry.py /app
+COPY Cloud/Registry/Registry.py /app
 
 CMD python3 Registry.py ${BROKER_CLOUD} ${MODE} ${HOST_MYSQL} ${TIME_INACTIVE_PLATFORM} ${TIME_UPDATE_CONF} ${TIME_CHECK_PLATFORM_ACTIVE}
 

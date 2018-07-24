@@ -5,7 +5,7 @@ from influxdb import InfluxDBClient
 import sys
 
 
-class Dbreader():
+class Dbreader:
     def __init__(self, broker_cloud, host_influxdb):
         self.clientDB = InfluxDBClient(host_influxdb, 8086, 'root', 'root', 'Collector_DB')
         self.clientDB.create_database('Collector_DB')
@@ -137,8 +137,6 @@ class Dbreader():
                     query_statement_global =  """SELECT MAX(\"item_state\") AS max_state, MIN(\"item_state\") AS min_state, MEAN(\"item_state\") AS average_state FROM \"{}\" where time >= \'{}\' AND time <= \'{}\'""".format(item_global_id, start_time, end_time)
                     query_result_global = self.clientDB.query(query_statement_global)
                     query_result_global = list(query_result_global.get_points())
-
-
 
                     if len(query_result_history) > 0 and len(query_result_global) > 0:
                         item = {

@@ -2,14 +2,14 @@ import json
 import requests
 import hashlib
 import time
-from Fog.Driver.Driver_Base import Driver
+from Driver_Base import Driver
 import sys
 
 
 class HomeAssistant(Driver):
-    def __init__(self, config_path, mode):
+    def __init__(self, config_path, mode, time_push):
         self.now_info = []
-        Driver.__init__(self, config_path, mode)
+        Driver.__init__(self, config_path, mode, time_push)
 
     def get_states(self):
         print('Get state of all things')
@@ -153,7 +153,8 @@ class HomeAssistant(Driver):
 
 if __name__ == '__main__':
     CONFIG_PATH = "config/configuration.ini"
-    # MODE = sys.argv[1]
-    MODE = 'PULL'
-    home_assistant = HomeAssistant(CONFIG_PATH, MODE)
+    MODE = sys.argv[1]
+    TIME_PUSH = int(sys.argv[2])
+    # MODE = 'PULL'
+    home_assistant = HomeAssistant(CONFIG_PATH, MODE, TIME_PUSH)
     home_assistant.run()
