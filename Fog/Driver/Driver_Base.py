@@ -74,7 +74,7 @@ class Driver:
                         config.write(file)
 
                 logging.info('Platform_id: ' + self.platform_id)
-                self.handle_info_from_registry(info_receive_from_registry=body['resources'], init_time=True)
+                self.handle_info_from_registry(info_receive_from_registry=body['sources'], init_time=True)
                 self.clientMQTT.unsubscribe(topic_response)
                 check_response = 1
 
@@ -108,16 +108,16 @@ class Driver:
         # "local_id":"global_id"
         new_info = []
         print('info_receive_from_registry: {}'.format(info_receive_from_registry))
-        for resource in info_receive_from_registry:
-            temp_resource = {}
-            self.list_mapping_id[resource['information']['LocalId']] = resource['information']['ResourceId']
-            temp_resource['information'] = copy.deepcopy(resource['information'])
-            del temp_resource['information']['ResourceId']
-            if "ResourceStatus" in temp_resource['information']:
+        for source in info_receive_from_registry:
+            temp_source = {}
+            self.list_mapping_id[source['information']['LocalId']] = source['information']['SourceId']
+            temp_source['information'] = copy.deepcopy(source['information'])
+            del temp_source['information']['SourceId']
+            if "SourceStatus" in temp_source['information']:
                 # print("Co Nhe")
-                del temp_resource['information']['ResourceStatus']
+                del temp_source['information']['SourceStatus']
             metrics = []
-            for metric in resource['metrics']:
+            for metric in source['metrics']:
                 self.list_mapping_id[metric['MetricLocalId']] = metric['MetricId']
                 self.now_metric_domain[metric['MetricLocalId']] = metric['MetricDomain']
                 temp_metric = copy.deepcopy(metric)
@@ -127,8 +127,8 @@ class Driver:
                     del temp_metric["MetricStatus"]
                 metrics.append(temp_metric)
 
-            temp_resource['metrics'] = metrics
-            new_info.append(temp_resource)
+            temp_source['metrics'] = metrics
+            new_info.append(temp_source)
         if init_time is False:
             self.now_info = new_info
         else:
@@ -136,11 +136,11 @@ class Driver:
 
     def mapping_id(self, info, ids, is_config=True):
         if is_config is True:
-            for resource in info:
-                if resource['information']['LocalId'] in ids:
-                    resource['information']['ResourceId'] = ids[resource['information']['LocalId']]
+            for source in info:
+                if source['information']['LocalId'] in ids:
+                    source['information']['SourceId'] = ids[source['information']['LocalId']]
 
-                for metric in resource['metrics']:
+                for metric in source['metrics']:
                     if metric['MetricLocalId'] in ids:
                         metric['MetricId'] = ids[metric['MetricLocalId']]
         else:
@@ -179,7 +179,7 @@ class Driver:
     def api_update_now_configuration(self, client, userdata, msg):
         message = json.loads(msg.payload.decode('utf-8'))
         print("API update: {}".format(message))
-        self.handle_info_from_registry(info_receive_from_registry=message['body']['active_resources'])
+        self.handle_info_from_registry(info_receive_from_registry=message['body']['active_sources'])
 
     def api_set_state(self, client, userdata, msg):
         print("API SET STATE")

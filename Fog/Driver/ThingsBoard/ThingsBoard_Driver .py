@@ -174,7 +174,7 @@ class ThingsBoard(Driver):
                         'thing_local_type': device["type"]
                     }),
                     'Description': "",
-                    'ResourceType': "Thing"
+                    'SourceType': "Thing"
                 },
                 'metrics': []
             }

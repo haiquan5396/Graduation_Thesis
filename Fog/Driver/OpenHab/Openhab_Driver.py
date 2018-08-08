@@ -196,7 +196,7 @@ class OpenHAB(Driver):
 
             thing_temp = {
                 'information':{
-                    'ResourceType': "Thing",
+                    'SourceType': "Thing",
                     'ThingName': str(thing_name),
                     'LocalId': "thing-" + str(thing_local_id),
                     'PlatformId': str(self.platform_id),
@@ -241,7 +241,7 @@ class OpenHAB(Driver):
 
             thing_temp = {
                 'information':{
-                    'ResourceType': "Thing",
+                    'SourceType': "Thing",
                     'ThingName': str(thing_name),
                     'LocalId': "thing-" + str(thing_local_id),
                     'PlatformId': str(self.platform_id),

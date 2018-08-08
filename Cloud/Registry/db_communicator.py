@@ -31,88 +31,88 @@ class DbCommunicator:
                 print("Can't get connection DB")
                 pass
 
-    def get_resources(self, platform_id=None, resource_id=None, resource_status=None, resource_type=None, metric_status=None, get_metric=True, get_resource_id_of_metric=False):
+    def get_sources(self, platform_id=None, source_id=None, source_status=None, source_type=None, metric_status=None, get_metric=True, get_source_id_of_metric=False):
         cnx_1 = self.get_connection_to_db()
         cursor_1 = cnx_1.cursor()
         have_where = False
-        resources = []
-        query_resource = """SELECT ResourceId, EndPoint, ResourceStatus, Description, ResourceType, Label, PlatformId, LocalId
-                            FROM IoTResource"""
+        sources = []
+        query_source = """SELECT SourceId, EndPoint, SourceStatus, Description, SourceType, Label, PlatformId, LocalId
+                            FROM IoTSource"""
 
         if platform_id is not None:
             if have_where is False:
-                query_resource = query_resource + """ WHERE PlatformId='{}'""".format(platform_id)
+                query_source = query_source + """ WHERE PlatformId='{}'""".format(platform_id)
                 have_where = True
             else:
-                query_resource = query_resource + """ and PlatformId='{}'""".format(platform_id)
+                query_source = query_source + """ and PlatformId='{}'""".format(platform_id)
 
-        if resource_id is not None:
+        if source_id is not None:
             if have_where is False:
-                query_resource = query_resource + """ WHERE ResourceId='{}'""".format(resource_id)
+                query_source = query_source + """ WHERE SourceId='{}'""".format(source_id)
                 have_where = True
             else:
-                query_resource = query_resource + """ and ResourceId='{}'""".format(resource_id)
+                query_source = query_source + """ and SourceId='{}'""".format(source_id)
 
-        if resource_type is not None:
+        if source_type is not None:
             if have_where is False:
-                query_resource = query_resource + """ WHERE ResourceType='{}'""".format(resource_type)
+                query_source = query_source + """ WHERE SourceType='{}'""".format(source_type)
                 have_where = True
             else:
-                query_resource = query_resource + """ and ResourceType='{}'""".format(resource_type)
+                query_source = query_source + """ and SourceType='{}'""".format(source_type)
 
-        if (resource_status is not None) and (resource_status in ['active', 'inactive']):
+        if (source_status is not None) and (source_status in ['active', 'inactive']):
             if have_where is False:
-                query_resource = query_resource + """ WHERE ResourceStatus='{}'""".format(resource_status)
+                query_source = query_source + """ WHERE SourceStatus='{}'""".format(source_status)
                 have_where = True
             else:
-                query_resource = query_resource + """ and ResourceStatus='{}'""".format(resource_status)
-        print(query_resource)
-        cursor_1.execute(query_resource)
-        rows_resource = cursor_1.fetchall()
-        for row_resource in rows_resource:
-            resource = {
+                query_source = query_source + """ and SourceStatus='{}'""".format(source_status)
+        print(query_source)
+        cursor_1.execute(query_source)
+        rows_source = cursor_1.fetchall()
+        for row_source in rows_source:
+            source = {
                 'information': {},
             }
 
-            resource['information']['ResourceId'] = row_resource[0]
-            resource['information']['EndPoint'] = row_resource[1]
+            source['information']['SourceId'] = row_source[0]
+            source['information']['EndPoint'] = row_source[1]
 
-            if resource_status is not None:
-                resource['information']['ResourceStatus'] = row_resource[2]
+            if source_status is not None:
+                source['information']['SourceStatus'] = row_source[2]
 
-            resource['information']['Description'] = row_resource[3]
-            resource['information']['ResourceType'] = row_resource[4]
-            resource['information']['Label'] = row_resource[5]
-            resource['information']['PlatformId'] = row_resource[6]
-            resource['information']['LocalId'] = row_resource[7]
-            if resource['information']['ResourceType'] == "Thing":
-                self.get_thing_info(resource['information']['ResourceId'], resource)
+            source['information']['Description'] = row_source[3]
+            source['information']['SourceType'] = row_source[4]
+            source['information']['Label'] = row_source[5]
+            source['information']['PlatformId'] = row_source[6]
+            source['information']['LocalId'] = row_source[7]
+            if source['information']['SourceType'] == "Thing":
+                self.get_thing_info(source['information']['SourceId'], source)
 
-            # elif resource['information']['ResourceType'] == "Platform":
-            #     self.get_platform_info(resource['information']['ResourceId'], resource)
+            # elif source['information']['SourceType'] == "Platform":
+            #     self.get_platform_info(source['information']['SourceId'], source)
 
             if get_metric is True:
-                resource['metrics'] = self.get_metrics(resource_id=row_resource[0], metric_status=metric_status, get_resource_id=get_resource_id_of_metric)
+                source['metrics'] = self.get_metrics(source_id=row_source[0], metric_status=metric_status, get_source_id=get_source_id_of_metric)
 
-            resources.append(resource)
+            sources.append(source)
         cnx_1.commit()
         cursor_1.close()
         cnx_1.close()
-        return resources
+        return sources
 
-    def get_metrics(self, resource_id=None, metric_status=None, get_resource_id=False):
+    def get_metrics(self, source_id=None, metric_status=None, get_source_id=False):
         cnx_1 = self.get_connection_to_db()
         cursor_1 = cnx_1.cursor()
         have_where = False
-        query_metric = """SELECT MetricId, MetricName, MetricType, Unit, MetricDomain, MetricStatus, ResourceId, MetricLocalId
+        query_metric = """SELECT MetricId, MetricName, MetricType, Unit, MetricDomain, MetricStatus, SourceId, MetricLocalId
                             FROM Metric"""
 
-        if resource_id is not None:
+        if source_id is not None:
             if have_where is False:
-                query_metric = query_metric + """ WHERE ResourceId='{}'""".format(resource_id)
+                query_metric = query_metric + """ WHERE SourceId='{}'""".format(source_id)
                 have_where = True
             else:
-                query_metric = query_metric + """ and ResourceId='{}'""".format(resource_id)
+                query_metric = query_metric + """ and SourceId='{}'""".format(source_id)
 
         if (metric_status is not None) and (metric_status in ['active', 'inactive']):
             if have_where is False:
@@ -133,8 +133,8 @@ class DbCommunicator:
             metric['MetricDomain'] = row_metric[4]
             if metric_status is not None:
                 metric['MetricStatus'] = row_metric[5]
-            if get_resource_id is True:
-                metric['ResourceId'] = row_metric[6]
+            if get_source_id is True:
+                metric['SourceId'] = row_metric[6]
 
             metric['MetricLocalId'] = row_metric[7]
 
@@ -144,52 +144,52 @@ class DbCommunicator:
         cnx_1.close()
         return metrics
 
-    def get_thing_info(self, resource_id, resource_info):
+    def get_thing_info(self, source_id, source_info):
         cnx_1 = self.get_connection_to_db()
         cursor_1 = cnx_1.cursor()
         cursor_1.execute("""SELECT ThingName
-                            FROM Thing  WHERE ThingGlobalId=%s""", (str(resource_id),))
+                            FROM Thing  WHERE ThingGlobalId=%s""", (str(source_id),))
         thing_info = cursor_1.fetchone()
-        resource_info['information']['ThingName'] = thing_info[0]
+        source_info['information']['ThingName'] = thing_info[0]
         cnx_1.commit()
         cursor_1.close()
         cnx_1.close()
 
-    def update_info_resource(self, info, new_resource=False):
+    def update_info_source(self, info, new_source=False):
         cnx_1 = self.get_connection_to_db()
         cursor_1 = cnx_1.cursor()
 
-        resource_id = info['ResourceId']
+        source_id = info['SourceId']
         endpoint = info['EndPoint']
-        resource_status = info['ResourceStatus']
+        source_status = info['SourceStatus']
         description = info['Description']
-        resource_type = info['ResourceType']
+        source_type = info['SourceType']
         label = info['Label']
         platform_id = info['PlatformId']
         local_id = info['LocalId']
 
-        if new_resource is False:
+        if new_source is False:
 
-            cursor_1.execute("""UPDATE IoTResource SET EndPoint=%s, ResourceStatus=%s, Description=%s, Label=%s, LocalId=%s  WHERE ResourceId=%s""",
-                             (endpoint, resource_status, description, str(label), local_id, str(resource_id)))
+            cursor_1.execute("""UPDATE IoTSource SET EndPoint=%s, SourceStatus=%s, Description=%s, Label=%s, LocalId=%s  WHERE SourceId=%s""",
+                             (endpoint, source_status, description, str(label), local_id, str(source_id)))
 
-            if resource_type == "Thing":
+            if source_type == "Thing":
                 cursor_1.execute("""UPDATE Thing SET ThingName=%s  WHERE ThingGlobalId=%s""",
-                    (info['ThingName'], str(resource_id)))
-            # elif resource_type == "Platform":
+                    (info['ThingName'], str(source_id)))
+            # elif source_type == "Platform":
             #     cursor_1.execute("""UPDATE Platform SET PlatformName=%s, PlatformType=%s WHERE PlatformId=%s""",
-            #         (info['PlatformName'], info['PlatformType'], str(resource_id)))
+            #         (info['PlatformName'], info['PlatformType'], str(source_id)))
 
         else:
-            cursor_1.execute("""INSERT INTO IoTResource VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
-                             (resource_id, endpoint, resource_status, description, resource_type, str(label), str(platform_id), local_id))
+            cursor_1.execute("""INSERT INTO IoTSource VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+                             (source_id, endpoint, source_status, description, source_type, str(label), str(platform_id), local_id))
 
-            if resource_type == "Thing":
+            if source_type == "Thing":
                 cursor_1.execute("""INSERT INTO Thing VALUES (%s,%s)""",
-                                 (resource_id, info['ThingName']))
-            # elif resource_type == "Platform":
+                                 (source_id, info['ThingName']))
+            # elif source_type == "Platform":
             #     cursor_1.execute("""INSERT INTO Platform VALUES (%s,%s,%s)""",
-            #                      (resource_id, info['PlatformName'], info['PlatformType']))
+            #                      (source_id, info['PlatformName'], info['PlatformType']))
         cnx_1.commit()
         cursor_1.close()
         cnx_1.close()
@@ -260,7 +260,7 @@ class DbCommunicator:
         cnx_1 = self.get_connection_to_db()
         cursor_1 = cnx_1.cursor()
         metric_id = info_metric['MetricId']
-        resource_id = info_metric['ResourceId']
+        source_id = info_metric['SourceId']
         metric_name = info_metric['MetricName']
         metric_type = info_metric['MetricType']
         unit = info_metric['Unit']
@@ -268,11 +268,11 @@ class DbCommunicator:
         metric_status = info_metric['MetricStatus']
         metric_local_id = info_metric['MetricLocalId']
         if new_metric is False:
-            cursor_1.execute("""UPDATE Metric SET ResourceId=%s, MetricName=%s, MetricType=%s, Unit=%s, MetricDomain=%s, MetricStatus=%s, MetricLocalId=%s
-                                WHERE MetricId=%s""", (resource_id, metric_name, metric_type, unit, metric_domain, metric_status, metric_local_id, metric_id))
+            cursor_1.execute("""UPDATE Metric SET SourceId=%s, MetricName=%s, MetricType=%s, Unit=%s, MetricDomain=%s, MetricStatus=%s, MetricLocalId=%s
+                                WHERE MetricId=%s""", (source_id, metric_name, metric_type, unit, metric_domain, metric_status, metric_local_id, metric_id))
         else:
             cursor_1.execute("""INSERT INTO Metric VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
-                             (metric_id, resource_id, metric_name, metric_type, unit, metric_domain, metric_status, metric_local_id))
+                             (metric_id, source_id, metric_name, metric_type, unit, metric_domain, metric_status, metric_local_id))
         cnx_1.commit()
         cursor_1.close()
         cnx_1.close()

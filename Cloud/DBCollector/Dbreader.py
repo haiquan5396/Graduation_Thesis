@@ -85,14 +85,14 @@ class Dbreader:
                         metric_id, start_time, end_time)
                     query_result_global = self.clientDB.query(query_statement_global)
                     query_result_global = list(query_result_global.get_points())
-                    print(query_result_global[0]['max_state'], query_result_global[0]['min_state'],
-                          query_result_global[0]['average_state'])
+                    # print(query_result_global[0]['max_state'], query_result_global[0]['min_state'],
+                    #       query_result_global[0]['average_state'])
 
                     if len(query_result_history) > 0 and len(query_result_global) > 0:
 
-                        metric['max_global'] = query_result_global[0]['max_state'],
-                        metric['min_global'] = query_result_global[0]['min_state'],
-                        metric['average_global'] = query_result_global[0]['average_state'],
+                        metric['max_global'] = query_result_global[0]['max_state']
+                        metric['min_global'] = query_result_global[0]['min_state']
+                        metric['average_global'] = query_result_global[0]['average_state']
 
                         for data_history in query_result_history:
                             point = {
@@ -132,9 +132,9 @@ class Dbreader:
 
                     if len(query_result_history) > 0 and len(query_result_global) > 0:
 
-                        metric['max_global'] = query_result_global[0]['max_state'],
-                        metric['min_global'] = query_result_global[0]['min_state'],
-                        metric['average_global'] = query_result_global[0]['average_state'],
+                        metric['max_global'] = query_result_global[0]['max_state']
+                        metric['min_global'] = query_result_global[0]['min_state']
+                        metric['average_global'] = query_result_global[0]['average_state']
 
                         for data_history in query_result_history:
                             point = {

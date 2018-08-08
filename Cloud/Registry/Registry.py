@@ -52,14 +52,14 @@ class Registry:
                 if (time.time() - platform['LastResponse']) > self.time_inactive_platform and platform['PlatformStatus'] == 'active':
                     logging.info("Platform {}: inactive".format(platform['PlatformId']))
                     platform['PlatformStatus'] = 'inactive'
-                    resources = self.dbcommunitor.get_resources(platform_id=platform['PlatformId'],
-                                                                get_resource_id_of_metric=True)
-                    for resource in resources:
-                        resource['information']['ResourceStatus'] = 'inactive'
-                        for metric in resource['metrics']:
+                    sources = self.dbcommunitor.get_sources(platform_id=platform['PlatformId'],
+                                                                get_source_id_of_metric=True)
+                    for source in sources:
+                        source['information']['SourceStatus'] = 'inactive'
+                        for metric in source['metrics']:
                             metric['MetricStatus'] = 'inactive'
                             self.dbcommunitor.update_metric(info_metric=metric)
-                        self.dbcommunitor.update_info_resource(info=resource['information'])
+                        self.dbcommunitor.update_info_source(info=source['information'])
                     self.dbcommunitor.update_platform(info_platform=platform)
 
                     self.send_notification_to_collector()
@@ -68,38 +68,38 @@ class Registry:
 
     def update_changes_to_db(self, new_info, platform_id):
         # print("Update change of {} to database".format(platform_id))
-        now_info = self.dbcommunitor.get_resources(platform_id=platform_id, resource_status="all", metric_status="all")
-        inactive_resources = copy.deepcopy(now_info)
+        now_info = self.dbcommunitor.get_sources(platform_id=platform_id, source_status="all", metric_status="all")
+        inactive_sources = copy.deepcopy(now_info)
 
-        for new_resource in new_info:
-            info_new_resource = copy.deepcopy(new_resource['information'])
-            if 'ResourceId' in info_new_resource:
-                for now_resource in now_info:
-                    info_now_resource = copy.deepcopy(now_resource['information'])
-                    if info_now_resource["ResourceId"] == info_new_resource["ResourceId"]:
-                        info_new_resource['ResourceStatus'] = 'active'
-                        # if info_now_resource['ResourceType'] == 'Thing':
-                        #     if (info_now_resource['EndPoint'] != info_new_resource['EndPoint']
-                        #             or info_now_resource['Description'] != info_new_resource['Description']
-                        #             or info_now_resource['Label'] != info_new_resource['Label']
-                        #             or info_now_resource['ThingName'] != info_new_resource['ThingName']):
+        for new_source in new_info:
+            info_new_source = copy.deepcopy(new_source['information'])
+            if 'SourceId' in info_new_source:
+                for now_source in now_info:
+                    info_now_source = copy.deepcopy(now_source['information'])
+                    if info_now_source["SourceId"] == info_new_source["SourceId"]:
+                        info_new_source['SourceStatus'] = 'active'
+                        # if info_now_source['SourceType'] == 'Thing':
+                        #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
+                        #             or info_now_source['Description'] != info_new_source['Description']
+                        #             or info_now_source['Label'] != info_new_source['Label']
+                        #             or info_now_source['ThingName'] != info_new_source['ThingName']):
 
-                        self.dbcommunitor.update_info_resource(info=info_new_resource)
+                        self.dbcommunitor.update_info_source(info=info_new_source)
 
-                        # elif info_now_resource['ResourceType'] == 'Platform':
-                        #     if (info_now_resource['EndPoint'] != info_new_resource['EndPoint']
-                        #             or info_now_resource['Description'] != info_new_resource['Description']
-                        #             or info_now_resource['Label'] != info_new_resource['Label']
-                        #             or info_now_resource['PlatformName'] != info_new_resource['PlatformName']
-                        #             or info_now_resource['PlatformType'] != info_new_resource['PlatformType']):
+                        # elif info_now_source['SourceType'] == 'Platform':
+                        #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
+                        #             or info_now_source['Description'] != info_new_source['Description']
+                        #             or info_now_source['Label'] != info_new_source['Label']
+                        #             or info_now_source['PlatformName'] != info_new_source['PlatformName']
+                        #             or info_now_source['PlatformType'] != info_new_source['PlatformType']):
                         #
-                        #         self.dbcommunitor.update_info_resource(info=info_new_resource)
+                        #         self.dbcommunitor.update_info_source(info=info_new_source)
 
-                        inactive_metrics = copy.deepcopy(now_resource['metrics'])
+                        inactive_metrics = copy.deepcopy(now_source['metrics'])
 
-                        for new_metric in new_resource['metrics']:
+                        for new_metric in new_source['metrics']:
                             if 'MetricId' in new_metric:
-                                for now_metric in now_resource['metrics']:
+                                for now_metric in now_source['metrics']:
                                     if now_metric["MetricId"] == new_metric["MetricId"]:
                                         # if (now_metric["MetricName"] != new_metric["MetricName"]
                                         #         or now_metric["MetricType"] != new_metric["MetricType"]
@@ -107,14 +107,14 @@ class Registry:
                                         #         or now_metric['MetricDomain'] != new_metric['MetricDomain']):
                                         # temp_metric = copy.deepcopy(new_metric)
                                         new_metric['MetricStatus'] = 'active'
-                                        new_metric['ResourceId'] = info_new_resource['ResourceId']
+                                        new_metric['SourceId'] = info_new_source['SourceId']
                                         self.dbcommunitor.update_metric(info_metric=new_metric)
                                         inactive_metrics.remove(now_metric)
                                         break
                             else:
                                 # New metric
                                 #temp_metric = copy.deepcopy(new_metric)
-                                new_metric['ResourceId'] = info_new_resource['ResourceId']
+                                new_metric['SourceId'] = info_new_source['SourceId']
                                 new_metric['MetricStatus'] = 'active'
                                 new_metric['MetricId'] = str(uuid.uuid4())
                                 self.dbcommunitor.update_metric(info_metric=new_metric, new_metric=True)
@@ -122,32 +122,32 @@ class Registry:
                         if len(inactive_metrics) != 0:
                             # Inactive metrics
                             for metric in inactive_metrics:
-                                metric['ResourceId'] = info_new_resource['ResourceId']
+                                metric['SourceId'] = info_new_source['SourceId']
                                 metric['MetricStatus'] = 'inactive'
                                 self.dbcommunitor.update_metric(info_metric=metric)
 
-                        inactive_resources.remove(now_resource)
+                        inactive_sources.remove(now_source)
                         break
             else:
-                # New Resource
-                new_resource_id = str(uuid.uuid4())
-                new_resource['information']['ResourceId'] = new_resource_id
-                new_resource['information']['ResourceStatus'] = 'active'
-                self.dbcommunitor.update_info_resource(info=new_resource['information'], new_resource=True)
-                for metric in new_resource['metrics']:
-                    metric['ResourceId'] = new_resource_id
+                # New Source
+                new_source_id = str(uuid.uuid4())
+                new_source['information']['SourceId'] = new_source_id
+                new_source['information']['SourceStatus'] = 'active'
+                self.dbcommunitor.update_info_source(info=new_source['information'], new_source=True)
+                for metric in new_source['metrics']:
+                    metric['SourceId'] = new_source_id
                     metric['MetricStatus'] = 'active'
                     metric['MetricId'] = str(uuid.uuid4())
                     self.dbcommunitor.update_metric(info_metric=metric, new_metric=True)
 
-        if len(inactive_resources) != 0:
-            # Inactive resources
-            for resource in inactive_resources:
-                resource['information']['ResourceStatus'] = 'inactive'
-                self.dbcommunitor.update_info_resource(info=resource['information'])
-                for metric in resource['metrics']:
+        if len(inactive_sources) != 0:
+            # Inactive sources
+            for source in inactive_sources:
+                source['information']['SourceStatus'] = 'inactive'
+                self.dbcommunitor.update_info_source(info=source['information'])
+                for metric in source['metrics']:
                     metric['MetricStatus'] = 'inactive'
-                    metric['ResourceId'] = resource['information']['ResourceId']
+                    metric['SourceId'] = source['information']['SourceId']
                     self.dbcommunitor.update_metric(info_metric=metric)
 
     def handle_configuration_changes(self, body, message):
@@ -165,7 +165,7 @@ class Registry:
                     self.update_changes_to_db(new_info, platform_id)
 
             else:
-                print('Platform have Id: {} changed resources configuration'.format(platform_id))
+                print('Platform have Id: {} changed sources configuration'.format(platform_id))
                 new_info = body['new_info']
                 self.update_changes_to_db(new_info, platform_id)
 
@@ -174,7 +174,7 @@ class Registry:
                 'PlatformId': platform_id
             },
             'body': {
-                'active_resources': self.dbcommunitor.get_resources(platform_id=platform_id, resource_status='active', metric_status='active')
+                'active_sources': self.dbcommunitor.get_sources(platform_id=platform_id, source_status='active', metric_status='active')
             }
 
         }
@@ -236,12 +236,12 @@ class Registry:
             }
             self.dbcommunitor.update_platform(info_platform, new_platform=True)
 
-        resources = self.dbcommunitor.get_resources(platform_id=platform_id)
-        print(resources)
+        sources = self.dbcommunitor.get_sources(platform_id=platform_id)
+        print(sources)
         message_response['header']['PlatformId'] = platform_id
         message_response['header']['PlatformHost'] = body['PlatformHost']
         message_response['header']['PlatformPort'] = body['PlatformPort']
-        message_response['body']['resources'] = resources
+        message_response['body']['sources'] = sources
 
         # check connection and publish message
         queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
@@ -251,19 +251,19 @@ class Registry:
 
         self.send_notification_to_collector()
 
-    def api_get_resources(self, body, message):
+    def api_get_sources(self, body, message):
         print('API Get All Things')
         message_received = json.loads(body)
 
         reply_to = message_received['header']['reply_to']
         platform_id = message_received['body']['PlatformId']
-        resource_id = message_received['body']['ResourceId']
+        source_id = message_received['body']['SourceId']
         metric_status = message_received['body']['MetricStatus']
-        resource_status = message_received['body']['ResourceStatus']
+        source_status = message_received['body']['SourceStatus']
         print(message_received)
         message_response = {
             'body': {
-                "resources": self.dbcommunitor.get_resources(platform_id=platform_id, resource_id=resource_id, resource_status=resource_status, metric_status=metric_status)
+                "sources": self.dbcommunitor.get_sources(platform_id=platform_id, source_id=source_id, source_status=source_status, metric_status=metric_status)
             }
         }
 
@@ -314,9 +314,9 @@ class Registry:
             )
 
     def run(self):
-        registry.request.api_get_resources
-        queue_get_resources = Queue(name='', exchange=self.exchange,
-                                 routing_key='registry.request.api_get_resources', message_ttl=20)
+
+        queue_get_sources = Queue(name='registry.request.api_get_sources', exchange=self.exchange,
+                                 routing_key='registry.request.api_get_sources', message_ttl=20)
         queue_get_list_platforms = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
                                          routing_key='registry.request.api_get_list_platforms', message_ttl=20)
         queue_add_platform = Queue(name='registry.request.api_add_platform', exchange=self.exchange,
@@ -335,7 +335,7 @@ class Registry:
                 self.consumer_connection.ensure_connection(max_retries=1)
                 with nested(Consumer(self.consumer_connection, queues=queue_add_platform, callbacks=[self.api_add_platform],
                                      no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_resources, callbacks=[self.api_get_resources],
+                            Consumer(self.consumer_connection, queues=queue_get_sources, callbacks=[self.api_get_sources],
                                      no_ack=True),
                             Consumer(self.consumer_connection, queues=queue_get_list_platforms,
                                      callbacks=[self.api_get_list_platforms], no_ack=True),

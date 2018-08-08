@@ -34,31 +34,31 @@ def api_get_platforms(platform_status):
     return jsonify(get_list_platforms(platform_status))
 
 
-@app.route('/api/resources', defaults={'resource_status': 'active', 'metric_status': 'active'}, methods=['GET'])
-@app.route('/api/resources/<resource_status>/<metric_status>', methods=['GET'])
-def api_get_resources(resource_status, metric_status):
-    return jsonify(get_resources(resource_status=resource_status, metric_status=metric_status))
+@app.route('/api/sources', defaults={'source_status': 'active', 'metric_status': 'active'}, methods=['GET'])
+@app.route('/api/sources/<source_status>/<metric_status>', methods=['GET'])
+def api_get_sources(source_status, metric_status):
+    return jsonify(get_sources(source_status=source_status, metric_status=metric_status))
 
 
-@app.route('/api/resource/<resource_id>', methods=['GET'])
-def api_get_resources_by_resource_id(resource_id):
-    return jsonify(get_resources(resource_id=resource_id, resource_status="all", metric_status="all"))
+@app.route('/api/source/<source_id>', methods=['GET'])
+def api_get_sources_by_source_id(source_id):
+    return jsonify(get_sources(source_id=source_id, source_status="all", metric_status="all"))
 
 
-@app.route('/api/resources/platform_id/<platform_id>', defaults={'resource_status': 'active', 'metric_status': 'active'}, methods=['GET'])
-@app.route('/api/resources/platform_id/<platform_id>/<resource_status>/<metric_status>', methods=['GET'])
-def api_get_resources_platform_id(platform_id, resource_status, metric_status):
-    return jsonify(get_resources(platform_id=platform_id, resource_status=resource_status, metric_status=metric_status))
+@app.route('/api/sources/platform_id/<platform_id>', defaults={'source_status': 'active', 'metric_status': 'active'}, methods=['GET'])
+@app.route('/api/sources/platform_id/<platform_id>/<source_status>/<metric_status>', methods=['GET'])
+def api_get_sources_platform_id(platform_id, source_status, metric_status):
+    return jsonify(get_sources(platform_id=platform_id, source_status=source_status, metric_status=metric_status))
 
 
-@app.route('/api/history/resources/<start_time>/<end_time>', defaults={'resource_status': 'active', 'metric_status': 'active', 'scale': '0s'}, methods=['GET'])
-@app.route('/api/history/resources/<start_time>/<end_time>/<scale>', defaults={'resource_status': 'active', 'metric_status': 'active'}, methods=['GET'])
-@app.route('/api/history/resources/<resource_status>/<metric_status>/<start_time>/<end_time>/<scale>', methods=['GET'])
-def api_get_resources_history(resource_status, metric_status, start_time, end_time, scale):
+@app.route('/api/history/sources/<start_time>/<end_time>', defaults={'source_status': 'active', 'metric_status': 'active', 'scale': '0s'}, methods=['GET'])
+@app.route('/api/history/sources/<start_time>/<end_time>/<scale>', defaults={'source_status': 'active', 'metric_status': 'active'}, methods=['GET'])
+@app.route('/api/history/sources/<source_status>/<metric_status>/<start_time>/<end_time>/<scale>', methods=['GET'])
+def api_get_sources_history(source_status, metric_status, start_time, end_time, scale):
     try:
         datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
         datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
-        return jsonify(get_resources_history(start_time=start_time, end_time=end_time, scale=scale, resource_status=resource_status, metric_status=metric_status))
+        return jsonify(get_sources_history(start_time=start_time, end_time=end_time, scale=scale, source_status=source_status, metric_status=metric_status))
     except ValueError:
         return jsonify({'error': 'Incorrect data format, should be %Y-%m-%d %H:%M:%S'})
 
@@ -78,25 +78,25 @@ def api_get_metric_history_by_id(metric_id, start_time, end_time, scale):
                         'metric_id': metric_id})
 
 
-@app.route('/api/history/resource/<resource_id>/<start_time>/<end_time>', defaults={'scale': '0s'}, methods=['GET'])
-@app.route('/api/history/resource/<resource_id>/<start_time>/<end_time>/<scale>', methods=['GET'])
-def api_get_resources_history_by_resource_id(resource_id, start_time, end_time, scale):
+@app.route('/api/history/source/<source_id>/<start_time>/<end_time>', defaults={'scale': '0s'}, methods=['GET'])
+@app.route('/api/history/source/<source_id>/<start_time>/<end_time>/<scale>', methods=['GET'])
+def api_get_sources_history_by_source_id(source_id, start_time, end_time, scale):
     try:
         datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
         datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
-        return jsonify(get_resources_history(start_time=start_time, end_time=end_time, scale=scale, resource_id=resource_id, resource_status="all", metric_status="all"))
+        return jsonify(get_sources_history(start_time=start_time, end_time=end_time, scale=scale, source_id=source_id, source_status="all", metric_status="all"))
     except ValueError:
         return jsonify({'error': 'Incorrect data format, should be %Y-%m-%d %H:%M:%S'})
 
 
-@app.route('/api/history/resources/platform_id/<platform_id>/<start_time>/<end_time>', defaults={'resource_status': 'active', 'metric_status': 'active', 'scale': '0s'}, methods=['GET'])
-@app.route('/api/history/resources/platform_id/<platform_id>/<start_time>/<end_time>/<scale>', defaults={'resource_status': 'active', 'metric_status': 'active'}, methods=['GET'])
-@app.route('/api/history/resources/platform_id/<platform_id>/<resource_status>/<metric_status>/<start_time>/<end_time>/<scale>', methods=['GET'])
-def api_get_resources_history_by_platform_id(platform_id, resource_status, metric_status, start_time, end_time, scale):
+@app.route('/api/history/sources/platform_id/<platform_id>/<start_time>/<end_time>', defaults={'source_status': 'active', 'metric_status': 'active', 'scale': '0s'}, methods=['GET'])
+@app.route('/api/history/sources/platform_id/<platform_id>/<start_time>/<end_time>/<scale>', defaults={'source_status': 'active', 'metric_status': 'active'}, methods=['GET'])
+@app.route('/api/history/sources/platform_id/<platform_id>/<source_status>/<metric_status>/<start_time>/<end_time>/<scale>', methods=['GET'])
+def api_get_sources_history_by_platform_id(platform_id, source_status, metric_status, start_time, end_time, scale):
     try:
         datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
         datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
-        return jsonify(get_resources_history(platform_id=platform_id, resource_status=resource_status, metric_status=metric_status, start_time=start_time, end_time=end_time, scale=scale))
+        return jsonify(get_sources_history(platform_id=platform_id, source_status=source_status, metric_status=metric_status, start_time=start_time, end_time=end_time, scale=scale))
     except ValueError:
         return jsonify({'error': 'Incorrect data format, should be %Y-%m-%d %H:%M:%S'})
 
@@ -104,10 +104,10 @@ def api_get_resources_history_by_platform_id(platform_id, resource_status, metri
 @app.route('/api/metric', methods=['POST'])
 def api_set_state():
     request_message = request.json
-    resource_id = request_message['ResourceId']
+    source_id = request_message['SourceId']
     metric_id = request_message['MetricId']
     new_state = request_message['new_value']
-    return jsonify(set_state(resource_id, metric_id, new_state))
+    return jsonify(set_state(source_id, metric_id, new_state))
 
 
 # prevent cached responses
@@ -119,12 +119,12 @@ def add_header(response):
     return response
 
 
-def get_resources_history(start_time, end_time, scale, resource_status=None, metric_status=None, platform_id=None, resource_id=None):
+def get_sources_history(start_time, end_time, scale, source_status=None, metric_status=None, platform_id=None, source_id=None):
     print("API get things state history")
     try:
-        list_resources_info = get_resources_info(resource_status=resource_status, metric_status=metric_status, platform_id=platform_id, resource_id=resource_id)
-        list_resources_state = get_resources_state_history_by_list_thing(list_resources_info, start_time, end_time, scale)
-        return list_resources_state
+        list_sources_info = get_sources_info(source_status=source_status, metric_status=metric_status, platform_id=platform_id, source_id=source_id)
+        list_sources_state = get_sources_state_history_by_list_thing(list_sources_info, start_time, end_time, scale)
+        return list_sources_state
     except (KeyError, IndexError):
         error = {
             'error': "Can not connect to service"
@@ -133,18 +133,18 @@ def get_resources_history(start_time, end_time, scale, resource_status=None, met
         return error
 
 
-def get_resources_state_history_by_list_thing(list_resources_info, start_time, end_time, scale):
+def get_sources_state_history_by_list_thing(list_sources_info, start_time, end_time, scale):
     print("get_things_state_history_by_list_thing")
     list_metric_id = []
-    for resource_info in list_resources_info:
-        for metric_info in resource_info['metrics']:
+    for source_info in list_sources_info:
+        for metric_info in source_info['metrics']:
             list_metric_id.append(metric_info['MetricId'])
 
     list_metric_state = get_metric_state_history(list_metric_id, start_time, end_time, scale)
     # print(list_item_state[0])
     for metric_state in list_metric_state:
-        for resource_info in list_resources_info:
-            for metric_info in resource_info['metrics']:
+        for source_info in list_sources_info:
+            for metric_info in source_info['metrics']:
                 if metric_state['MetricId'] == metric_info['MetricId']:
                     metric_info['history'] = metric_state['history']
                     if 'max_global' in metric_state:
@@ -155,13 +155,13 @@ def get_resources_state_history_by_list_thing(list_resources_info, start_time, e
                         metric_info['average_global'] = metric_state['average_global']
                     break
 
-    for resource_info in list_resources_info:
-        for metric_info in resource_info['metrics']:
+    for source_info in list_sources_info:
+        for metric_info in source_info['metrics']:
             if 'history' in metric_info:
                 continue
             else:
                 metric_info['history'] = []
-    list_things_state = list_resources_info
+    list_things_state = list_sources_info
     return list_things_state
 
 
@@ -208,43 +208,43 @@ def get_list_platforms(platform_status):
         return None
 
 
-def get_resources_info(resource_status=None, metric_status=None, platform_id=None, resource_id=None):
-    print("API get resource info")
-    if ((resource_status in ["active", "inactive", "all"]) and (metric_status in ["active", "inactive", "all"])) or platform_id is not None or resource_id is not None:
+def get_sources_info(source_status=None, metric_status=None, platform_id=None, source_id=None):
+    print("API get source info")
+    if ((source_status in ["active", "inactive", "all"]) and (metric_status in ["active", "inactive", "all"])) or platform_id is not None or source_id is not None:
         message_request = {
             'header': {},
             'body': {
                 "PlatformId": None,
-                "ResourceStatus": None,
+                "SourceStatus": None,
                 "MetricStatus": None,
-                "ResourceId": None,
+                "SourceId": None,
             }
         }
 
-        if (resource_status in ["active", "inactive", "all"]) and (metric_status in ["active", "inactive", "all"]):
-            message_request['body']['ResourceStatus'] = resource_status
+        if (source_status in ["active", "inactive", "all"]) and (metric_status in ["active", "inactive", "all"]):
+            message_request['body']['SourceStatus'] = source_status
             message_request['body']['MetricStatus'] = metric_status
 
         if platform_id is not None:
             message_request['body']['PlatformId'] = platform_id
 
-        if resource_id is not None:
-            message_request['body']['ResourceId'] = resource_id
+        if source_id is not None:
+            message_request['body']['SourceId'] = source_id
         print(message_request)
         # request to api_get_things of Registry
-        request_routing_key = 'registry.request.api_get_resources'
+        request_routing_key = 'registry.request.api_get_sources'
         message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
         print(message_response)
-        return message_response['body']['resources']
+        return message_response['body']['sources']
     else:
         return None
 
 
-def get_resources(resource_status=None, metric_status=None, platform_id=None, resource_id=None):
+def get_sources(source_status=None, metric_status=None, platform_id=None, source_id=None):
     try:
-        list_resources_info = get_resources_info(resource_status=resource_status, metric_status=metric_status, platform_id=platform_id, resource_id=resource_id)
-        list_resources_state = get_resources_state_by_list_resource(list_resources_info)
-        return list_resources_state
+        list_sources_info = get_sources_info(source_status=source_status, metric_status=metric_status, platform_id=platform_id, source_id=source_id)
+        list_sources_state = get_sources_state_by_list_source(list_sources_info)
+        return list_sources_state
 
     except (KeyError, IndexError):
         error = {
@@ -267,32 +267,32 @@ def get_metric_state(list_metric_id):
     return message_response['body']["metrics"]
 
 
-def get_resources_state_by_list_resource(list_resources_info):
+def get_sources_state_by_list_source(list_sources_info):
     list_metric_id = []
-    for resource_info in list_resources_info:
-        for metric_info in resource_info['metrics']:
+    for source_info in list_sources_info:
+        for metric_info in source_info['metrics']:
             list_metric_id.append(metric_info['MetricId'])
 
     list_metric_state = get_metric_state(list_metric_id)
     # print(list_item_state[0])
     for metric_state in list_metric_state:
-        for resource_info in list_resources_info:
-            for metric in resource_info['metrics']:
+        for source_info in list_sources_info:
+            for metric in source_info['metrics']:
                 if metric['MetricId'] == metric_state['MetricId']:
                     metric['DataPoint'] = metric_state["DataPoint"]
                     break
 
-    list_things_state = list_resources_info
+    list_things_state = list_sources_info
     return list_things_state
 
 
-def set_state(resource_id, metric_id, new_value):
+def set_state(source_id, metric_id, new_value):
     try:
-        resource = get_resources_info(resource_id=resource_id)[0]
+        source = get_sources_info(source_id=source_id)[0]
     except:
-        print("Wrong resource_id")
+        print("Wrong source_id")
         return
-    for metric in resource['metrics']:
+    for metric in source['metrics']:
         if metric['MetricId'] == metric_id:
             domain_name = metric["MetricDomain"]
             if metric_domain_file[domain_name]['can_set_value'] is True:
@@ -316,10 +316,10 @@ def set_state(resource_id, metric_id, new_value):
 
                 message_request ={
                     'header': {
-                        "PlatformId": resource['information']['PlatformId']
+                        "PlatformId": source['information']['PlatformId']
                     },
                     'body': {
-                        'information': resource['information'],
+                        'information': source['information'],
                         'metric': metric,
                         'new_value': value_mapped
                     }

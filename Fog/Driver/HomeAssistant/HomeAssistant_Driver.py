@@ -63,7 +63,7 @@ class HomeAssistant(Driver):
                     "information":{
                         "EndPoint": 'http://' + self.host + ':' + self.port + '/api/states',
                         "Description": "",
-                        "ResourceType": "Thing",
+                        "SourceType": "Thing",
 
                         "Label": str({
                             "thing_local_type": thing_local_type
