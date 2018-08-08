@@ -3,7 +3,6 @@ import json
 from kombu import Connection, Consumer, Exchange, Queue, exceptions
 import sys
 from datetime import datetime
-from Performance_Monitoring.message_monitor import MessageMonitor
 
 
 class DBwriter:
@@ -13,43 +12,32 @@ class DBwriter:
 
         self.consumer_connection = Connection(broker_cloud)
         self.exchange = Exchange("IoT", type="direct")
-        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
-    def write_db(self, list_things):
-        # print("Write to database")
-        data_write_db = []
-        for thing in list_things['things']:
-            for item in thing['items']:
-                record = {
-                    'measurement': item['item_global_id'],
-                    'tags': {
-                        'platform_id': list_things['platform_id'],
-                        'thing_type': thing['thing_type'],
-                        'thing_name': thing['thing_name'],
-                        'thing_global_id': thing['thing_global_id'],
-                        'thing_local_id': thing['thing_local_id'],
-                        'location': thing['location'],
-                        'item_type': item['item_type'],
-                        'item_name': item['item_name'],
-                        'item_global_id': item['item_global_id'],
-                        'item_local_id': item['item_local_id'],
-                        'can_set_state': item['can_set_state'],
-                    },
-                    'fields': {
-                        'item_state': item['item_state'],
-                    },
-                    'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                }
+    def write_db(self, data_points):
 
-                data_write_db.append(record)
-
-        self.clientDB.write_points(data_write_db)
-        print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': Updated Database')
+        print(len(data_points))
+        for point in data_points:
+            record = [{
+                'measurement': point['MetricId'],
+                'tags': {
+                    'DataType': point['DataType'],
+                },
+                'fields': {
+                    'Value': point['Value'],
+                },
+                'time': point['TimeCollect']
+            }]
+            try:
+                self.clientDB.write_points(record)
+                print(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ': Updated Database')
+            except:
+                print("Can't write to database : {}".format(point['MetricId']))
+                print("Delete mesurement....")
+                self.clientDB.drop_measurement(measurement=point['MetricId'])
 
     def api_write_db(self, body, message):
-        list_things = json.loads(body)
-        self.write_db(list_things)
-        self.message_monitor.end_message(list_things, 'write_db', 'api_write_db')
+        data_points = json.loads(body)['body']['data_points']
+        self.write_db(data_points)
 
     def run(self):
         queue_write_db = Queue(name='dbwriter.request.api_write_db', exchange=self.exchange,
@@ -68,8 +56,8 @@ class DBwriter:
 
 if __name__ == '__main__':
 
-    # MODE_CODE = 'Develop'
-    MODE_CODE = 'Deploy'
+    MODE_CODE = 'Develop'
+    # MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
 

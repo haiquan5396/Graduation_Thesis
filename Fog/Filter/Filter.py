@@ -1,14 +1,14 @@
 import json
 import paho.mqtt.client as mqtt
 import sys
-from Performance_Monitoring.message_monitor import MessageMonitor
+import copy
 
 
-class Filter():
+class Filter:
     def __init__(self, broker_fog):
         self.client = mqtt.Client()
         self.client.connect(broker_fog)
-        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
+        self.now_state = {}         # {global_id : value_state}
 
     def on_connect(self, client, userdata, flags, rc):
         print("Connected to Mosquitto")
@@ -16,12 +16,35 @@ class Filter():
         self.client.subscribe(filter_topic_sub)
 
     def filter_message(self, client, userdata, msg):
+        print("Filter message")
         filter_topic_pub = 'filter/response/forwarder/api_get_states'
-        print(msg.payload.decode("utf-8"))
-        data = json.loads(msg.payload.decode('utf-8'))
-        data['message_monitor'] = self.message_monitor.monitor(data, 'filter', 'filter_message')
-        data = json.dumps(data)
-        self.client.publish(filter_topic_pub, data)
+        message = json.loads(msg.payload.decode('utf-8'))
+        print("Before: {}".format(message))
+        received_state = message['body']['states']
+        filter_states = copy.deepcopy(received_state)
+        for state in received_state:
+            if 'MetricId' in state:
+                if state['MetricId'] in self.now_state:
+                    if self.now_state[state['MetricId']] != state["DataPoint"]["Value"]:
+                        # metric change state value
+                        self.now_state[state['MetricId']] = state["DataPoint"]["Value"]
+                    else:
+                        # metric don't change state value
+                        if message['header']['mode'] == 'PUSH':
+                            filter_states.remove(state)
+                else:
+                    # metric has registered and this is the first time it is passed to filter
+                    self.now_state[state['MetricId']] = state["DataPoint"]["Value"]
+            else:
+                # metric don't have MetricId =>> Metric hasn't registered
+                filter_states.remove(state)
+        if len(filter_states) > 0:
+            message['body']['states'] = filter_states
+            #data['message_monitor'] = self.message_monitor.monitor(data, 'filter', 'filter_message')
+            print("After: {}".format(message))
+            self.client.publish(filter_topic_pub, json.dumps(message))
+        else:
+            print("Loc Het")
 
     def run(self):
         self.client.on_connect = self.on_connect
@@ -29,8 +52,8 @@ class Filter():
         self.client.loop_forever()
 
 if __name__ == '__main__':
-    # MODE_CODE = 'Develop'
-    MODE_CODE = 'Deploy'
+    MODE_CODE = 'Develop'
+    # MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
         BROKER_FOG = 'localhost'

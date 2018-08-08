@@ -2,62 +2,49 @@ import json
 import requests
 import hashlib
 import time
-from Driver_Base import Driver
+from Fog.Driver.Driver_Base import Driver
 import sys
+import logging
 
 
 class HomeAssistant(Driver):
-    def __init__(self, config_path, mode, time_push):
-        self.now_info = []
-        Driver.__init__(self, config_path, mode, time_push)
+    def __init__(self, config_path, time_push):
+
+        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG, datefmt='%m-%d-%Y %H:%M:%S')
+        Driver.__init__(self, config_path, time_push)
 
     def get_states(self):
         print('Get state of all things')
-
         url = 'http://' + self.host + ':' + self.port + '/api/states'
         response = self.connect_platform(url)
-        list_thing = {
-            'platform_id': str(self.platform_id),
-            'things': []
-        }
 
-        for thing in response:
-            # print(thing['entity_id'])
-            thing_type = thing['entity_id'].split(".")[0]
-            if thing_type != 'group' and thing_type != 'automation' and thing_type != 'updater':
-                # Trong HomeAssistant do quản lý chỉ đến mức Thing nên ta coi các item của 1 thing là chính nó.
-                # VD: đèn là một thing và có item chính là bản thân cái đèn đó
-                item_type = thing_type
-                item_state = thing['state']
-                if item_type == 'sensor':
-                    item_state = int(thing['state'])
-                else:
-                    item_state = thing['state']
+        states = []
 
-                thing_temp = {
-                    'thing_type': thing_type,
-                    'thing_name': thing['attributes']['friendly_name'],
-                    'thing_global_id': self.platform_id + '-' + thing['entity_id'],
-                    'thing_local_id': thing['entity_id'],
-                    'location': self.get_location_of_thing(response, thing['entity_id']),
-                    'items': [
-                        {
-                            'item_type': item_type,
-                            'item_name': thing['attributes']['friendly_name'],
-                            'item_global_id': self.platform_id + '-' + thing['entity_id'] + '-' + thing['entity_id'],
-                            'item_local_id': thing['entity_id'],
-                            'item_state': item_state,
-                            'can_set_state': self.check_can_set_state(item_type),
+        for metric in response:
 
+            thing_local_type = metric['entity_id'].split(".")[0]
+            if thing_local_type != 'group' and thing_local_type != 'automation' and thing_local_type != 'updater':
+                metric_local_id = metric['entity_id']
+                detect_value = self.detect_data_type(metric['state'])
+                value_detected = detect_value[1]
+                data_type_detected = detect_value[0]
+                if metric_local_id in self.now_metric_domain:
+                    mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected, data_type_detected)
+                    data_type_mapped = mapped[1]
+                    value_mapped = mapped[0]
+
+                    states.append({
+                        "MetricLocalId": metric_local_id,
+                        "DataPoint": {
+                            "DataType": data_type_mapped,
+                            "Value": value_mapped
                         }
-                    ]
-                }
-                list_thing['things'].append(thing_temp)
+                    })
 
-        return list_thing
+        return states
 
     def check_configuration_changes(self):
-        print('Check for changes')
+        logging.debug('Check for configuration')
 
         url = 'http://' + self.host + ':' + self.port + '/api/states'
         response = self.connect_platform(url)
@@ -65,47 +52,71 @@ class HomeAssistant(Driver):
         new_info = []
 
         for thing in response:
-            # print(thing['entity_id'])
-            thing_type = thing['entity_id'].split(".")[0]
-            if thing_type != 'group' and thing_type != 'automation' and thing_type != 'updater':
-                # Trong HomeAssistant do quản lý chỉ đến mức Thing nên ta coi các item của 1 thing là chính nó.
-                # VD: đèn là một thing và có item chính là bản thân cái đèn đó
+
+            thing_local_type = thing['entity_id'].split(".")[0]
+            if thing_local_type != 'group' and thing_local_type != 'automation' and thing_local_type != 'updater':
+                value = self.detect_data_type(thing['state'])[1]
+                sentence = thing['attributes']['friendly_name'] + " " + thing_local_type
+                metric_domain = self.detect_metric_domain(sentence, value)
 
                 thing_temp = {
-                    'thing_type': thing_type,
-                    'thing_name': thing['attributes']['friendly_name'],
-                    'platform_id': str(self.platform_id),
-                    'thing_global_id': self.platform_id + '-' + thing['entity_id'],
-                    'thing_local_id': thing['entity_id'],
-                    'location': self.get_location_of_thing(response, thing['entity_id']),
-                    'items': [
-                        {
-                            'item_type': thing_type,
-                            'item_name': thing['attributes']['friendly_name'],
-                            'item_global_id': self.platform_id + '-' + thing['entity_id'] + '-' + thing['entity_id'],
-                            'item_local_id': thing['entity_id'],
-                            'can_set_state': self.check_can_set_state(thing_type),
+                    "information":{
+                        "EndPoint": 'http://' + self.host + ':' + self.port + '/api/states',
+                        "Description": "",
+                        "ResourceType": "Thing",
 
-                        }
-                    ]
+                        "Label": str({
+                            "thing_local_type": thing_local_type
+                        }),
+                        "LocalId": "thing-" + thing['entity_id'],
+                        "ThingName": thing['attributes']['friendly_name'],
+                        "PlatformId": self.platform_id
+                    },
+                    "metrics": []
                 }
+
+                if 'unit_of_measurement' in thing['attributes']:
+                    metric = {
+                        "MetricName": thing['attributes']['friendly_name'],
+                        "MetricType": self.metric_domain_file[metric_domain]['metric_type'],
+                        "MetricLocalId": thing['entity_id'],
+                        "Unit": thing['attributes']['unit_of_measurement'],
+                        "MetricDomain": metric_domain
+                    }
+                else:
+                    metric = {
+                        "MetricName": thing['attributes']['friendly_name'],
+                        "MetricType": self.metric_domain_file[metric_domain]['metric_type'],
+                        "MetricLocalId": thing['entity_id'],
+                        "Unit": "unknown",
+                        "MetricDomain": metric_domain
+                    }
+
+                thing_temp['metrics'].append(metric)
+
                 new_info.append(thing_temp)
 
-        hash_now = hashlib.md5(str(new_info).encode())
-        hash_pre = hashlib.md5(str(self.now_info).encode())
+        print("new_info: {}".format(new_info))
+        print("now_info: {}".format(self.now_info))
+
+        hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
+        hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
+
+        print("new_info: {}".format(new_info))
+        print("now_info: {}".format(self.now_info))
+
         if hash_now.hexdigest() == hash_pre.hexdigest():
+            print("not change")
             return {
-                'have_change': False,
+                'is_change': False,
                 'new_info': new_info,
-                'platform_id': self.platform_id,
             }
 
         else:
-            self.now_info = new_info
+            print("change")
             return {
-                'have_change': True,
-                'new_info': new_info,
-                'platform_id': self.platform_id,
+                'is_change': True,
+                'new_info': new_info
             }
 
     def connect_platform(self, url):
@@ -115,7 +126,7 @@ class HomeAssistant(Driver):
                 response = requests.get(url).json()
                 return response
             except:
-                print("Error connect to Platform")
+                logging.error("Error connect to Platform")
                 time.sleep(2)
                 continue
 
@@ -135,26 +146,27 @@ class HomeAssistant(Driver):
                         return temp['entity_id'].split(".")[1]
         return None
 
-    def set_state(self, thing_type, thing_local_id, thing_location, thing_name,
-                  item_type, item_local_id, item_name, new_state):
-        print('Set sate of {} to {}'.format(thing_local_id, new_state))
-        if item_type == 'light':
+    def set_state(self, metric_local_id, metric_name, metric_domain, new_value):
+        print('Set sate of {} to {}'.format(metric_local_id, new_value))
+        if metric_domain == 'switch':
             print('Call Service ')
-            if new_state == "ON":
+            if new_value == "on":
                 url = 'http://' + self.host + ':' + self.port + '/api/services/light/turn_on'
-                data = {"entity_id": item_local_id}
+                data = {"entity_id": metric_local_id}
                 response = requests.post(url, json.dumps(data))
             else:
                 url = 'http://' + self.host + ':' + self.port + '/api/services/light/turn_off'
-                data = {"entity_id": item_local_id}
+                data = {"entity_id": metric_local_id}
                 response = requests.post(url, json.dumps(data))
         else:
             print('Type are not support')
 
+
 if __name__ == '__main__':
     CONFIG_PATH = "config/configuration.ini"
-    MODE = sys.argv[1]
-    TIME_PUSH = int(sys.argv[2])
-    # MODE = 'PULL'
-    home_assistant = HomeAssistant(CONFIG_PATH, MODE, TIME_PUSH)
+    # MODE = sys.argv[1]
+    # TIME_PUSH = int(sys.argv[2])
+    MODE = 'PULL'
+    TIME_PUSH = 5
+    home_assistant = HomeAssistant(CONFIG_PATH, TIME_PUSH)
     home_assistant.run()

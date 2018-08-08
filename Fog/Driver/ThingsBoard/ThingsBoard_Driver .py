@@ -1,15 +1,13 @@
 import http.client
 import json
-import paho.mqtt.client as mqtt
 import hashlib
 from Fog.Driver.Driver_Base import Driver
 import time
 
 
 class ThingsBoard(Driver):
-    def __init__(self, config_path, mode):
-        self.now_info = []
-        Driver.__init__(self, config_path, mode)
+    def __init__(self, config_path, time_push):
+        Driver.__init__(self, config_path, time_push)
 
     def get_authorization(self):
         conn = http.client.HTTPConnection(self.host + ':' + self.port)
@@ -67,7 +65,7 @@ class ThingsBoard(Driver):
         return json_data['credentialsId']
 
     def get_telemetry_keys(self, thing_local_id):
-        telemetries = ""
+        telemetries = []
 
         result = self.connect()
         conn = result[0]
@@ -79,12 +77,9 @@ class ThingsBoard(Driver):
         json_data = json.loads(data.decode("utf-8"))
 
         for i, telemetry in enumerate(json_data):
-            if i == len(json_data) - 1:
-                telemetries = telemetries + telemetry
-            else:
-                telemetries = telemetries + telemetry + ","
+            telemetries.append(telemetry)
 
-        return [json_data, telemetries]
+        return [json_data, ",".join(sorted(telemetries))]
 
     def get_dashboard_id_on_customes_id(self, customers_id):
         result = self.connect()
@@ -106,25 +101,11 @@ class ThingsBoard(Driver):
         conn.request("GET", "/api/dashboard/" + dashboard_id, headers=headers)
         data = conn.getresponse().read()
         json_data = json.loads(data.decode("utf-8"))
-
-        return json_data["configuration"]["widgets"]["0c6413aa-8860-50e4-6eb8-935d21a1eacc"]["config"]["settings"][
-            "gpioList"]
-
-    def ordered(self, obj):
-        if isinstance(obj, dict):
-            return sorted((k, self.ordered(v)) for k, v in obj.items())
-        if isinstance(obj, list):
-            return sorted(self.ordered(x) for x in obj)
-        else:
-            return obj
+        #print("JSON_DASHBOARD: {}".format(json_data))
+        return json_data["configuration"]["widgets"]["0c6413aa-8860-50e4-6eb8-935d21a1eacc"]["config"]["settings"]["gpioList"]
 
     def get_states(self):
         print("get states")
-        list_thing = {
-            'platform_id': str(self.platform_id),
-            'things': []
-        }
-
         states = []
         device_list = self.get_list_device_on_customes()
 
@@ -143,69 +124,27 @@ class ThingsBoard(Driver):
             response_data = conn.getresponse().read()
             response_json = json.loads(response_data.decode("utf-8"))
 
-            state = {
-                'thing_type': device["type"],
-                'thing_name': device["name"],
-                'thing_global_id': self.platform_id + '-' + device["id"]["id"],
-                'thing_local_id': device["id"]["id"],
-                'location': "null",
-                'items': []
-            }
-
             for telemetry in keys_telemetry_list:
                 item_state = response_json[telemetry][0]["value"]
-                if device["id"]["id"] == "bb12cda0-4f80-11e8-a082-9dc4b7fcfa12":
-                    device["type"] = "sensor"
-                    item_state = int(response_json[telemetry][0]["value"])
-                    item_name = telemetry
-                elif device["id"]["id"] == "65c55ed0-601a-11e8-a3b8-6d591acbfd77":
-                    result_label_light = self.get_label_on_dashboard_id()
-                    if telemetry == "motion":
-                        device["type"] = "binary_sensor"
-                        if response_json[telemetry][0]["value"] == "1":
-                            item_state = "on"
-                        else:
-                            item_state = "off"
-                    elif telemetry == "3":
-                        device["type"] = "light"
-                        item_name = result_label_light[0]["label"]
-                        if response_json[telemetry][0]["value"] == "true":
-                            item_state = "on"
-                        else:
-                            item_state = "off"
-                    elif telemetry == "4":
-                        item_name = result_label_light[1]["label"]
-                        device["type"] = "light"
-                        if response_json[telemetry][0]["value"] == "true":
-                            item_state = "on"
-                        else:
-                            item_state = "off"
-                    elif telemetry == "5":
-                        item_name = result_label_light[2]["label"]
-                        device["type"] = "light"
-                        if response_json[telemetry][0]["value"] == "true":
-                            item_state = "on"
-                        else:
-                            item_state = "off"
-                else:
-                    item_state = response_json[telemetry][0]["value"]
-                    item_name = telemetry
+                item_name = telemetry
 
-                item = {
-                    'item_type': device["type"],
-                    'item_name': item_name,
-                    'item_global_id': self.platform_id + '-' + device["id"]["id"] + '-' + telemetry,
-                    'item_local_id': device["id"]["id"] + '-' + telemetry,
-                    'item_state': item_state,
-                    'can_set_state': self.check_can_set_state(device["type"])
-                }
-                state['items'].append(item)
+                metric_local_id = device["id"]["id"] + '-' + item_name
+                detect_value = self.detect_data_type(item_state)
+                value_detected = detect_value[1]
+                data_type_detected = detect_value[0]
+                if metric_local_id in self.now_metric_domain:
+                    mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected, data_type_detected)
+                    data_type_mapped = mapped[1]
+                    value_mapped = mapped[0]
+                    states.append({
+                        "MetricLocalId": metric_local_id,
+                        "DataPoint": {
+                            "DataType": data_type_mapped,
+                            "Value": value_mapped
+                        }
+                    })
 
-            states.append(state)
-
-        list_thing['things'] = states
-        print(list_thing)
-        return list_thing
+        return states
 
     def check_configuration_changes(self):
         new_info = []
@@ -213,7 +152,7 @@ class ThingsBoard(Driver):
         result = self.connect()
         conn = result[0]
         headers = result[1]
-
+        gpio_list = self.get_label_on_dashboard_id()
         for device in device_list:
             result_telemetry_keys = self.get_telemetry_keys(device["id"]["id"])
             keys_telemetry_list = result_telemetry_keys[0]
@@ -225,62 +164,67 @@ class ThingsBoard(Driver):
             response_data = conn.getresponse().read()
             response_json = json.loads(response_data.decode("utf-8"))
 
-            state = {
-                'thing_type': device["type"],
-                'thing_name': device["name"],
-                'platform_id': str(self.platform_id),
-                'thing_global_id': self.platform_id + '-' + device["id"]["id"],
-                'thing_local_id': device["id"]["id"],
-                'location': "null",
-                'items': []
+            thing_temp = {
+                'information':{
+                    'ThingName': device["name"],
+                    'PlatformId': str(self.platform_id),
+                    'LocalId': "thing-" + device["id"]["id"],
+                    'EndPoint': "/api/plugins/telemetry/DEVICE/" + device["id"]["id"],
+                    'Label': str({
+                        'thing_local_type': device["type"]
+                    }),
+                    'Description': "",
+                    'ResourceType': "Thing"
+                },
+                'metrics': []
             }
-
+            metrics = []
             for telemetry in keys_telemetry_list:
-                if device["id"]["id"] == "bb12cda0-4f80-11e8-a082-9dc4b7fcfa12":
-                    device["type"] = "sensor"
-                    item_name = telemetry
-                elif device["id"]["id"] == "65c55ed0-601a-11e8-a3b8-6d591acbfd77":
-                    result_label_light = self.get_label_on_dashboard_id()
-                    if telemetry == "motion":
-                        device["type"] = "binary_sensor"
-                        item_name = telemetry
-                    elif telemetry == "3":
-                        device["type"] = "light"
-                        item_name = result_label_light[0]["label"]
-                    elif telemetry == "4":
-                        device["type"] = "light"
-                        item_name = result_label_light[1]["label"]
-                    elif telemetry == "5":
-                        device["type"] = "light"
-                        item_name = result_label_light[2]["label"]
-                    else:
-                        item_name = telemetry
+                item_name = telemetry
+                for gpio in gpio_list:
+                    # print(type(gpio['pin']))
+                    if str(gpio['pin']) == telemetry:
+                        item_name = gpio['label']
 
-                item = {
-                    'item_type': device["type"],
-                    'item_name': item_name,
-                    'item_global_id': self.platform_id + '-' + device["id"]["id"] + '-' + telemetry,
-                    'item_local_id': device["id"]["id"] + '-' + telemetry,
-                    'can_set_state': self.check_can_set_state(device["type"])
+                item_state = response_json[telemetry][0]["value"]
+                value = self.detect_data_type(item_state)[1]
+                sentence = item_name + " " + device["type"]
+                metric_domain = self.detect_metric_domain(sentence, value)
+
+                metric = {
+                    "MetricType": self.metric_domain_file[metric_domain]['metric_type'],
+                    'MetricName': item_name,
+                    'MetricLocalId': device["id"]["id"] + '-' + telemetry,
+                    "Unit": "unknown",
+                    "MetricDomain": metric_domain
                 }
-                state['items'].append(item)
+                metrics.append(metric)
 
-            new_info.append(state)
+            thing_temp['metrics'] = metrics
+            new_info.append(thing_temp)
+
+        print("new_info: {}".format(new_info))
+        print("now_info: {}".format(self.now_info))
 
         hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
         hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
+
+        print("new_info: {}".format(str(self.ordered(new_info))))
+        print("now_info: {}".format(str(self.ordered(self.now_info))))
+
         if hash_now.hexdigest() == hash_pre.hexdigest():
+            print("not change")
             return {
-                'have_change': False,
+                'is_change': False,
                 'new_info': new_info,
-                'platform_id': str(self.platform_id)
             }
+
         else:
-            self.now_info = new_info
+            print("change")
+            # self.now_info = new_info
             return {
-                'have_change': True,
-                'new_info': new_info,
-                'platform_id': str(self.platform_id)
+                'is_change': True,
+                'new_info': new_info
             }
 
     def check_can_set_state(self, thing_type):
@@ -288,21 +232,23 @@ class ThingsBoard(Driver):
             return "yes"
         return "no"
 
-    def set_state(self, thing_type, thing_local_id, location, thing_name,
-                  item_type, item_local_id, item_name, new_state):
-        print("Set state {} into {}".format(thing_local_id, new_state))
+    def set_state(self, metric_local_id, metric_name, metric_domain, new_value):
+        print("Set state {} into {}".format(metric_local_id, new_value))
         result = self.connect()
         conn = result[0]
         headers = result[1]
 
-        if item_type == "light":
-            pin = item_local_id.rsplit('-', 1)[1]
-            if new_state == "ON":
+        if metric_domain == "switch":
+            pin = metric_local_id.rsplit('-', 1)[1]
+            device_id = metric_local_id.rsplit('-', 1)[0]
+            print("TACH : {}".format(metric_local_id.rsplit('-', 1)))
+            print("pin: {} device_id: {}".format(pin, device_id))
+            if new_value == "on":
                 body = '{"method":"setGpioStatus","params":{"pin":' + pin + ',"enabled":true}}'
-                conn.request("POST", "/api/plugins/rpc/twoway/" + thing_local_id, body=body, headers=headers)
-            elif new_state == "OFF":
+                conn.request("POST", "/api/plugins/rpc/twoway/" + device_id, body=body, headers=headers)
+            elif new_value == "off":
                 body = '{"method":"setGpioStatus","params":{"pin":' + pin + ',"enabled":false}}'
-                conn.request("POST", "/api/plugins/rpc/twoway/" + thing_local_id, body=body, headers=headers)
+                conn.request("POST", "/api/plugins/rpc/twoway/" + device_id, body=body, headers=headers)
             else:
                 print("Error set state")
         else:
@@ -312,5 +258,6 @@ class ThingsBoard(Driver):
 if __name__ == '__main__':
     CONFIG_PATH = "config/thingsboard.ini"
     MODE = 'PULL'
-    things_board = ThingsBoard(CONFIG_PATH, MODE)
+    TIME_PUSH = 5
+    things_board = ThingsBoard(CONFIG_PATH, TIME_PUSH)
     things_board.run()

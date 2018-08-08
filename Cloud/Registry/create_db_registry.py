@@ -1,43 +1,52 @@
 import MySQLdb
 
-db = MySQLdb.connect(host="25.71.222.50", user="root", passwd="root")
+db = MySQLdb.connect(host="172.17.0.4", user="root", passwd="root")
 
 # Create a Cursor object to execute queries.
 cursor = db.cursor()
 
-cursor.execute("""CREATE DATABASE IF NOT EXISTS Registry_DB""")
+cursor.execute("""CREATE DATABASE IF NOT EXISTS Registry""")
 
-cursor.execute("""USE Registry_DB""")
+cursor.execute("""USE Registry""")
+
 
 cursor.execute("""CREATE TABLE IF NOT EXISTS Platform(
-    platform_id VARCHAR(50) PRIMARY KEY,
-    platform_name VARCHAR(30) ,
-    host VARCHAR(30) ,
-    port INT,
-    last_response DOUBLE,
-    platform_status VARCHAR(20)) """)
+    PlatformId VARCHAR(50) PRIMARY KEY,
+    PlatformName VARCHAR(30) ,
+    PlatformType VARCHAR(30) ,
+    PlatformHost VARCHAR(30) ,
+    PlatformPort INT,
+    PlatformStatus VARCHAR(20),
+    LastResponse DOUBLE)""")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS IoTResource(
+    ResourceId VARCHAR(50) PRIMARY KEY,
+    EndPoint VARCHAR(150),
+    ResourceStatus VARCHAR(20),
+    Description VARCHAR(200),
+    ResourceType VARCHAR(20),
+    Label VARCHAR(100),
+    PlatformId VARCHAR(50),
+    LocalId VARCHAR (50),
+    FOREIGN KEY(PlatformId) REFERENCES Platform(PlatformId))""")
 
 
-# #create exam table
 cursor.execute("""CREATE TABLE IF NOT EXISTS Thing(
-    thing_global_id VARCHAR(100) PRIMARY KEY,
-    platform_id VARCHAR(50),
-    thing_name VARCHAR(50),
-    thing_type VARCHAR(50),
-    thing_local_id VARCHAR(50),
-    location VARCHAR(30),
-    thing_status VARCHAR(20),
-    FOREIGN KEY(platform_id) REFERENCES Platform(platform_id))""")
+    ThingGlobalId VARCHAR(50) PRIMARY KEY,
+    ThingName VARCHAR(50),
+    FOREIGN KEY(ThingGlobalId) REFERENCES IoTResource(ResourceId))""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS Item(
-    item_global_id VARCHAR(150) PRIMARY KEY,
-    thing_global_id VARCHAR(100),
-    item_name VARCHAR(50),
-    item_type VARCHAR(20),
-    item_local_id VARCHAR(50),
-    can_set_state VARCHAR(5),
-    item_status VARCHAR(20),
-    FOREIGN KEY(thing_global_id) REFERENCES Thing(thing_global_id))""")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS Metric(
+    MetricId VARCHAR(150) PRIMARY KEY,
+    ResourceId VARCHAR(100),
+    MetricName VARCHAR(50),
+    MetricType VARCHAR(20),
+    Unit VARCHAR(20),
+    MetricDomain VARCHAR(20),
+    MetricStatus VARCHAR(20),
+    MetricLocalId VARCHAR (50),
+    FOREIGN KEY(ResourceId) REFERENCES IoTResource(ResourceId))""")
 
 
 db.commit()

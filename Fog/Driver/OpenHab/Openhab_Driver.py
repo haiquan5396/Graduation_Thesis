@@ -23,14 +23,11 @@ from Fog.Driver.Driver_Base import Driver
 
 
 class OpenHAB(Driver):
-    def __init__(self, config_path, mode):
-        Driver.__init__(self, config_path, mode)
+    def __init__(self, config_path, time_push):
+        Driver.__init__(self, config_path, time_push)
 
         base_url = "http://" + self.host + ":" + self.port + "/rest"
         self.openhab = openHAB(base_url)
-        self.pre_info = None
-        self.now_info = []
-
 
     def get_things_from_openhab(self):
         while True:
@@ -42,10 +39,9 @@ class OpenHAB(Driver):
                 print ("Error connect to OpenHAB")
                 time.sleep(2)
 
-
     def get_states(self):
         things = self.get_things_from_openhab()
-
+        print("STATES: {}".format(things))
         states = []
         item_of_thing_list = []
 
@@ -57,8 +53,6 @@ class OpenHAB(Driver):
         # items_list = list(items[:, 0])
         items_list = list(items)
         # print (items_list)
-
-
 
         # Get all things and items of things in openHAB
         for thing in things:
@@ -75,35 +69,31 @@ class OpenHAB(Driver):
                 item_name = linked_item["linkedItems"][0]
                 item_of_thing_list.append(item_name)  # Get all item of things.
                 item_local_id = item_name
-                item_global_id = self.platform_id + "-" + thing_local_id + "-" + item_local_id
                 item_url = "http://" + self.host + ":" + self.port + "/rest/items?recursive=false"
                 item = self.openhab.get_item(item_name)
                 # item_state = item.state
-                if (item_type == "Number"):
-                    item_state = int(item['state'])
-                else:
-                    item_state = str(item['state'])
+                # if item_type == "Number":
+                #     item_state = int(item['state'])
+                # else:
+                #     item_state = str(item['state'])
 
-                can_set_state = True
-                items_state.append({
-                    'item_type': str(item_type),
-                    'item_name': str(item_name),
-                    'item_global_id': str(item_global_id),
-                    'item_local_id': str(item_local_id),
-                    'item_state': item_state,
-                    'can_set_state': str(can_set_state)
-                }
-                )
+                metric_local_id = linked_item["itemType"]
+                detect_value = self.detect_data_type(item['state'])
+                value_detected = detect_value[1]
+                data_type_detected = detect_value[0]
 
-            state = {
-                'thing_type': str(thing_type),
-                'thing_name': str(thing_name),
-                'thing_global_id': str(thing_global_id),
-                'thing_local_id': str(thing_local_id),
-                'location': str(thing_location),
-                'items': items_state
-            }
-            states.append(state)
+                if metric_local_id in self.now_metric_domain:
+                    mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected, data_type_detected)
+                    data_type_mapped = mapped[1]
+                    value_mapped = mapped[0]
+
+                    states.append({
+                        "MetricLocalId": metric_local_id,
+                        "DataPoint": {
+                            "DataType": data_type_mapped,
+                            "Value": value_mapped
+                        }
+                    })
 
         # Get items not belong thing
         item_of_thing_list = np.asarray(item_of_thing_list)
@@ -118,67 +108,48 @@ class OpenHAB(Driver):
         # Those items above be converted to things
         for item_to_thing in remain_item_list:
             item = self.openhab.get_item_raw(item_to_thing)
+            print("STATES ITEM: {}".format(item))
 
             item_type = item['type']
             item_name = item['name']
             item_local_id = item_name
             thing_name = item_name
-            # item_state = item['state']
-            if (item_type == "Number"):
-                item_state = int(item['state'])
-            else:
-                item_state = str(item['state'])
-            # transfer type
-            if item_local_id in ['Humidity', 'Temperature', 'Light']:
-                item_type = 'sensor'
-            elif item_local_id in ['Motion']:
-                item_type = 'binary_sensor'
-            elif 'Switch' in item_local_id:
-                item_type = 'light'
+            # # item_state = item['state']
+            # if (item_type == "Number"):
+            #     item_state = int(item['state'])
+            # else:
+            #     item_state = str(item['state'])
+            # # transfer type
 
-            thing_type = item_type
-            thing_local_id = thing_name
-            thing_global_id = self.platform_id + '-' + thing_local_id
-            item_global_id = self.platform_id + '-' + thing_local_id + '-' + item_local_id
-            location = 'unknown'
-            can_set_state = True
+            # thing_type = item_type
+            # thing_local_id = thing_name
+            # thing_global_id = self.platform_id + '-' + thing_local_id
+            # item_global_id = self.platform_id + '-' + thing_local_id + '-' + item_local_id
 
-            items_state = [
-                {
-                    'item_type': str(item_type),
-                    'item_name': str(item_name),
-                    'item_global_id': str(item_global_id),
-                    'item_local_id': str(item_local_id),
-                    'item_state': item_state,
-                    'can_set_state': str(can_set_state)
-                }
-            ]
+            metric_local_id = item_local_id
+            detect_value = self.detect_data_type(item['state'])
+            value_detected = detect_value[1]
+            data_type_detected = detect_value[0]
 
-            state = {
-                'thing_type': str(thing_type),
-                'thing_name': str(thing_name),
-                'thing_global_id': str(thing_global_id),
-                'thing_local_id': str(thing_local_id),
-                'location': str(location),
-                'items': items_state
-            }
+            if metric_local_id in self.now_metric_domain:
+                mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected,
+                                                 data_type_detected)
+                data_type_mapped = mapped[1]
+                value_mapped = mapped[0]
 
-            states.append(state)
-
-        list_thing = {
-            'platform_id': self.platform_id,
-            'things': states
-        }
-
-        return list_thing
-
-
-
+                states.append({
+                    "MetricLocalId": metric_local_id,
+                    "DataPoint": {
+                        "DataType": data_type_mapped,
+                        "Value": value_mapped
+                    }
+                })
+        return states
 
     def check_configuration_changes(self):
         print('Check for changes')
         item_of_thing_list = []
-        now_info = []
+        new_info = []
 
         things = self.get_things_from_openhab()
         # print (things)
@@ -197,10 +168,8 @@ class OpenHAB(Driver):
             thing_type = thing["thingTypeUID"]
             thing_name = thing["label"]
             thing_local_id = thing["UID"]
-            thing_global_id = self.platform_id + "-" + thing_local_id
-            thing_location = thing["location"]
             linked_items = thing["channels"]
-            items_state = []
+            metrics = []
 
             for linked_item in linked_items:
                 item_type = linked_item["itemType"]
@@ -208,33 +177,40 @@ class OpenHAB(Driver):
                 # item_local_id  = linked_item["uid"]
                 item_of_thing_list.append(item_name)  # Get all item of things.
                 item_local_id = item_name
-                item_global_id = self.platform_id + "-" + thing_local_id + "-" + item_local_id
-                item_url = "http://" + self.host + ":" + self.port + "/rest/items?recursive=false"
-                item = self.openhab.get_item(item_name)
+                # item_global_id = self.platform_id + "-" + thing_local_id + "-" + item_local_id
+                # item_url = "http://" + self.host + ":" + self.port + "/rest/items?recursive=false"
                 item_state = item.state
-                can_set_state = True
-                items_state.append(
+                item = self.openhab.get_item(item_name)
+                value = self.detect_data_type(item_state)[1]
+                sentence = item_name + " " + item_type
+                metric_domain = self.detect_metric_domain(sentence, value)
+                metrics.append(
                     {
-                        'item_type': str(item_type),
-                        'item_name': str(item_name),
-                        'item_global_id': str(item_global_id),
-                        'item_local_id': str(item_local_id),
-                        'can_set_state': str(can_set_state)
+                        'MetricType': self.metric_domain_file[metric_domain]['metric_type'],
+                        'MetricName': str(item_name),
+                        'MetricLocalId': str(item_local_id),
+                        'Unit': "unknown",
+                        'MetricDomain': metric_domain
                     }
                 )
 
-            state = {
-                'thing_type': str(thing_type),
-                'thing_name': str(thing_name),
-                'thing_global_id': str(thing_global_id),
-                'thing_local_id': str(thing_local_id),
-                'location': str(thing_location),
-                'platform_id': str(self.platform_id),
-                'items': items_state
+            thing_temp = {
+                'information':{
+                    'ResourceType': "Thing",
+                    'ThingName': str(thing_name),
+                    'LocalId': "thing-" + str(thing_local_id),
+                    'PlatformId': str(self.platform_id),
+                    "Label": str({
+                        "thing_local_type": thing_type
+                    }),
+                    "Description": "",
+                    "EndPoint": "http://" + self.host + ":" + self.port + "/rest"
+                },
+                'metrics': metrics
             }
-            now_info.append(state)
+            new_info.append(thing_temp)
 
-        if (item_of_thing_list != []):
+        if len(item_of_thing_list) != 0:
             remain_item_list = list(set(items_list) - set(item_of_thing_list))
         else:
             remain_item_list = list(set(items_list))
@@ -249,73 +225,71 @@ class OpenHAB(Driver):
             item_state = item['state']
             item_local_id = item_name
             thing_local_id = thing_name
-
-            # transfer type
-            if item_local_id in ['Humidity', 'Temperature', 'Light']:
-                item_type = 'sensor'
-            elif item_local_id in ['Motion']:
-                item_type = 'binary_sensor'
-            elif 'Switch' in item_local_id:
-                item_type = 'light'
-
             thing_type = item_type
-            thing_global_id = self.platform_id + '-' + thing_local_id
-            item_global_id = self.platform_id + '-' + thing_local_id + '-' + item_local_id
-            location = 'unknow'
-            can_set_state = True
-
-            items_state = [
+            value = self.detect_data_type(item_state)[1]
+            sentence = item_name + " " + item_type
+            metric_domain = self.detect_metric_domain(sentence, value)
+            metrics = [
                 {
-                    'item_type': str(item_type),
-                    'item_name': str(item_name),
-                    'item_global_id': str(item_global_id),
-                    'item_local_id': str(item_local_id),
-                    'can_set_state': str(can_set_state)
+                    'MetricType': self.metric_domain_file[metric_domain]['metric_type'],
+                    'MetricName': str(item_name),
+                    'MetricLocalId': str(item_local_id),
+                    'Unit': "unknown",
+                    'MetricDomain': metric_domain
                 }
             ]
 
-            state = {
-                'thing_type': str(thing_type),
-                'thing_name': str(thing_name),
-                'thing_global_id': str(thing_global_id),
-                'thing_local_id': str(thing_local_id),
-                'location': str(location),
-                'platform_id': str(self.platform_id),
-                'items': items_state
+            thing_temp = {
+                'information':{
+                    'ResourceType': "Thing",
+                    'ThingName': str(thing_name),
+                    'LocalId': "thing-" + str(thing_local_id),
+                    'PlatformId': str(self.platform_id),
+                    "Label": str({
+                        "thing_local_type": thing_type
+                    }),
+                    "Description": "",
+                    "EndPoint": "http://" + self.host + ":" + self.port + "/rest"
+                },
+                'metrics': metrics
             }
 
-            now_info.append(state)
+            new_info.append(thing_temp)
 
-        # print (now_info)
+        print("new_info: {}".format(new_info))
+        print("now_info: {}".format(self.now_info))
 
-        hash_now = hashlib.sha256(str(now_info).encode())
-        hash_pre = hashlib.sha256(str(self.pre_info).encode())
+        hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
+        hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
 
-        print (now_info)
+        print("new_info: {}".format(new_info))
+        print("now_info: {}".format(self.now_info))
 
         if hash_now.hexdigest() == hash_pre.hexdigest():
+            print("not change")
             return {
-                'have_change': False,
-                'new_info': now_info,
-                'platform_id': self.platform_id,
-            }
-        else:
-            self.pre_info = now_info
-            return {
-                'have_change': True,
-                'new_info': now_info,
-                'platform_id': self.platform_id,
+                'is_change': False,
+                'new_info': new_info,
             }
 
-    def set_state(self, thing_type, thing_local_id, location, thing_name,
-                  item_type, item_local_id, item_name, new_state):
-        item = self.openhab.get_item(item_local_id)
-        item.command(new_state)
+        else:
+            print("change")
+            return {
+                'is_change': True,
+                'new_info': new_info
+            }
+
+    def set_state(self, metric_local_id, metric_name, metric_domain, new_value):
+        print("SET STATE {} to {}".format(metric_local_id, new_value))
+        item = self.openhab.get_item(metric_local_id)
+        if isinstance(new_value, str):
+            item.command(new_value.upper())
 
 
 
 if __name__ == '__main__':
     CONFIG_PATH = "config/openhab.ini"
     MODE = 'PULL'
-    openHAB = OpenHAB(CONFIG_PATH, MODE)
+    TIME_PUSH = 5
+    openHAB = OpenHAB(CONFIG_PATH, TIME_PUSH)
     openHAB.run()
