@@ -12,7 +12,20 @@ import logging
 
 class Registry:
     def __init__(self, broker_cloud, mode, time_inactive_platform, time_update_conf, time_check_platform_active):
-        logging.basicConfig(format='[%(asctime)s - %(levelname)s] - %(message)s', level=logging.DEBUG, datefmt='%m-%d-%Y %H:%M:%S')
+        # ----->configure logging <-----
+        # if not os.path.exists('logging'):
+        #     os.makedirs('logging')
+        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
+        #                               backupCount=1)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
+                                      datefmt='%m-%d-%Y %H:%M:%S')
+        handler.setFormatter(formatter)
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.DEBUG)
+        # -----> end configure logging <-----
+
         self.time_update_conf = time_update_conf
         self.time_check_platform_active = time_check_platform_active
         self.time_inactive_platform = time_inactive_platform
@@ -41,7 +54,9 @@ class Registry:
         while 1:
             queue_name = 'driver.request.api_check_platform_active'
             list_platforms = self.dbcommunitor.get_platforms(platform_status='all')
+            # print("list_platform: {}".format(list_platforms))
             for platform in list_platforms:
+                self.logger.info("Send check active message to platform: {}".format(platform['PlatformId']))
                 message = {
                     'header': {
                         'PlatformId': platform['PlatformId'],
@@ -50,10 +65,9 @@ class Registry:
                 }
                 self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
                 if (time.time() - platform['LastResponse']) > self.time_inactive_platform and platform['PlatformStatus'] == 'active':
-                    logging.info("Platform {}: inactive".format(platform['PlatformId']))
+                    self.logger.info(" Change status of platform {} - {} to inactive".format(platform['PlatformName'], platform['PlatformId']))
                     platform['PlatformStatus'] = 'inactive'
-                    sources = self.dbcommunitor.get_sources(platform_id=platform['PlatformId'],
-                                                                get_source_id_of_metric=True)
+                    sources = self.dbcommunitor.get_sources(platform_id=platform['PlatformId'], get_source_id_of_metric=True)
                     for source in sources:
                         source['information']['SourceStatus'] = 'inactive'
                         for metric in source['metrics']:
@@ -165,7 +179,7 @@ class Registry:
                     self.update_changes_to_db(new_info, platform_id)
 
             else:
-                print('Platform have Id: {} changed sources configuration'.format(platform_id))
+                self.logger.info('Platform have Id: {} changed sources configuration'.format(platform_id))
                 new_info = body['new_info']
                 self.update_changes_to_db(new_info, platform_id)
 
@@ -180,10 +194,10 @@ class Registry:
         }
         queue_name = 'driver.request.api_update_now_configuration'
         self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
-        print("now config: {}".format(message))
+        # print("now config: {}".format(message))
 
     def api_get_list_platforms(self, body, message):
-        print("API get list platform with platform_status")
+        self.logger.info("API get list platform with platform_status")
         header = json.loads(body)['header']
         platform_status = header['PlatformStatus']
         queue_name = header['reply_to']
@@ -206,9 +220,8 @@ class Registry:
 
         platform_id = ""
         if header['registered'] is True:
-            print("lalalaaaa")
             platform_id = header['PlatformId']
-            logging.info("Platform have id: {} come back to system".format(platform_id))
+            self.logger.info("Platform {} - {} come back to system".format(body['PlatformName'], platform_id))
             info_platform = {
                 "PlatformId": platform_id,
                 "PlatformName": body['PlatformName'],
@@ -221,9 +234,9 @@ class Registry:
             self.dbcommunitor.update_platform(info_platform)
 
         else:
-            logging.info("Add new Platform to system")
+            self.logger.info("Add new Platform to system")
             platform_id = str(uuid.uuid4())
-            logging.info('Generate id for {} platform : {}'.format(body['PlatformName'], platform_id))
+            self.logger.info('Generate id for {} platform : {}'.format(body['PlatformName'], platform_id))
 
             info_platform = {
                 "PlatformId": platform_id,
@@ -237,22 +250,22 @@ class Registry:
             self.dbcommunitor.update_platform(info_platform, new_platform=True)
 
         sources = self.dbcommunitor.get_sources(platform_id=platform_id)
-        print(sources)
+        # print(sources)
         message_response['header']['PlatformId'] = platform_id
         message_response['header']['PlatformHost'] = body['PlatformHost']
         message_response['header']['PlatformPort'] = body['PlatformPort']
         message_response['body']['sources'] = sources
 
         # check connection and publish message
-        queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
-                               routing_key='registry.response.driver.api_add_platform', message_ttl=20)
+        # queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
+        #                        routing_key='registry.response.driver.api_add_platform', message_ttl=20)
         routing_key = 'registry.response.driver.api_add_platform'
         self.publish_messages(message_response, self.producer_connection, routing_key, self.exchange)
 
         self.send_notification_to_collector()
 
     def api_get_sources(self, body, message):
-        print('API Get All Things')
+        self.logger.info('API get sources')
         message_received = json.loads(body)
 
         reply_to = message_received['header']['reply_to']
@@ -260,23 +273,21 @@ class Registry:
         source_id = message_received['body']['SourceId']
         metric_status = message_received['body']['MetricStatus']
         source_status = message_received['body']['SourceStatus']
-        print(message_received)
+        # print(message_received)
         message_response = {
             'body': {
                 "sources": self.dbcommunitor.get_sources(platform_id=platform_id, source_id=source_id, source_status=source_status, metric_status=metric_status)
             }
         }
 
-        #message_response['message_monitor'] = self.message_monitor.monitor(body, 'registry', 'api_get_things')
         self.publish_messages(message_response, self.producer_connection, reply_to, self.exchange)
 
     def handle_check_platform_active(self, body, message):
 
         header = json.loads(body)['header']
         body = json.loads(body)['body']
-
         platform_id = header['PlatformId']
-        print("handle check platform active: {}".format(platform_id))
+        self.logger.debug("Handle message when platform {} response message check active".format(platform_id))
         if body['active'] is True:
             platform = self.dbcommunitor.get_platforms(platform_id=platform_id)[0]
             if platform['PlatformStatus'] == 'inactive':
@@ -286,17 +297,16 @@ class Registry:
             self.dbcommunitor.update_platform(info_platform=platform)
 
     def send_notification_to_collector(self):
-        print('Send notification to Collector')
+        self.logger.info('Send notification to Collector')
         message = {
             'notification': 'Have Platform_id change'
         }
 
-        #message['message_monitor'] = self.message_monitor.monitor({}, 'registry', 'send_notification_to_collector')
         queue_name = 'collector.request.notification'
         self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
 
     def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
-
+        self.logger.debug("message: {}".format(message))
         if queue_routing_key is None:
             queue_routing_key = queue_name
         if routing_key is None:
@@ -347,9 +357,9 @@ class Registry:
                     while True:
                         self.consumer_connection.drain_events()
             except (ConnectionRefusedError, exceptions.OperationalError):
-                print('Connection lost')
+                self.logger.error('Connection to Broker Cloud is lost')
             except self.consumer_connection.connection_errors:
-                print('Connection error')
+                self.logger.error('Connection to Broker Cloud is error')
 
 
 if __name__ == '__main__':

@@ -10,11 +10,11 @@ import logging
 class HomeAssistant(Driver):
     def __init__(self, config_path, time_push):
 
-        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG, datefmt='%m-%d-%Y %H:%M:%S')
+        # logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG, datefmt='%m-%d-%Y %H:%M:%S')
         Driver.__init__(self, config_path, time_push)
 
     def get_states(self):
-        print('Get state of all things')
+        # self.logger.debug('Get state of all things')
         url = 'http://' + self.host + ':' + self.port + '/api/states'
         response = self.connect_platform(url)
 
@@ -44,7 +44,7 @@ class HomeAssistant(Driver):
         return states
 
     def check_configuration_changes(self):
-        logging.debug('Check for configuration')
+        # self.logger.debug('Check for configuration')
 
         url = 'http://' + self.host + ':' + self.port + '/api/states'
         response = self.connect_platform(url)
@@ -60,7 +60,7 @@ class HomeAssistant(Driver):
                 metric_domain = self.detect_metric_domain(sentence, value)
 
                 thing_temp = {
-                    "information":{
+                    "information": {
                         "EndPoint": 'http://' + self.host + ':' + self.port + '/api/states',
                         "Description": "",
                         "SourceType": "Thing",
@@ -96,24 +96,24 @@ class HomeAssistant(Driver):
 
                 new_info.append(thing_temp)
 
-        print("new_info: {}".format(new_info))
-        print("now_info: {}".format(self.now_info))
+        # print("new_info: {}".format(new_info))
+        # print("now_info: {}".format(self.now_info))
 
         hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
         hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
 
-        print("new_info: {}".format(new_info))
-        print("now_info: {}".format(self.now_info))
+        # print("new_info: {}".format(new_info))
+        # print("now_info: {}".format(self.now_info))
 
         if hash_now.hexdigest() == hash_pre.hexdigest():
-            print("not change")
+            self.logger.debug("Configuration don't change")
             return {
                 'is_change': False,
                 'new_info': new_info,
             }
 
         else:
-            print("change")
+            self.logger.debug("Configuration have change")
             return {
                 'is_change': True,
                 'new_info': new_info
@@ -126,30 +126,12 @@ class HomeAssistant(Driver):
                 response = requests.get(url).json()
                 return response
             except:
-                logging.error("Error connect to Platform")
+                self.logger.error("Error connect to Platform")
                 time.sleep(2)
                 continue
 
-    def check_can_set_state(self, item_type):
-        url = 'http://' + self.host + ':' + self.port + '/api/services'
-        response = self.connect_platform(url)
-        for service in response:
-            if service['domain'] == item_type:
-                return "yes"
-        return "no"
-
-    def get_location_of_thing(self, list_things, thing_id):
-        for temp in list_things:
-            if temp['entity_id'].split(".")[0] == 'group':
-                for thing_in_group in temp['attributes']['entity_id']:
-                    if thing_in_group == thing_id:
-                        return temp['entity_id'].split(".")[1]
-        return None
-
     def set_state(self, metric_local_id, metric_name, metric_domain, new_value):
-        print('Set sate of {} to {}'.format(metric_local_id, new_value))
         if metric_domain == 'switch':
-            print('Call Service ')
             if new_value == "on":
                 url = 'http://' + self.host + ':' + self.port + '/api/services/light/turn_on'
                 data = {"entity_id": metric_local_id}
@@ -159,7 +141,7 @@ class HomeAssistant(Driver):
                 data = {"entity_id": metric_local_id}
                 response = requests.post(url, json.dumps(data))
         else:
-            print('Type are not support')
+            self.logger.error("Don't support {} set new_value: {}".format(metric_name, new_value))
 
 
 if __name__ == '__main__':

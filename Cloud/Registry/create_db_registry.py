@@ -1,6 +1,6 @@
 import MySQLdb
 
-db = MySQLdb.connect(host="172.17.0.4", user="root", passwd="root")
+db = MySQLdb.connect(host="0.0.0.0", user="root", passwd="root")
 
 # Create a Cursor object to execute queries.
 cursor = db.cursor()

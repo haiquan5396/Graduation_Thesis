@@ -36,12 +36,12 @@ class OpenHAB(Driver):
                 things = get(thing_url).json()
                 return things
             except:
-                print ("Error connect to OpenHAB")
+                self.logger.error("Error connect to Platform")
                 time.sleep(2)
 
     def get_states(self):
         things = self.get_things_from_openhab()
-        print("STATES: {}".format(things))
+        # print("STATES: {}".format(things))
         states = []
         item_of_thing_list = []
 
@@ -84,8 +84,12 @@ class OpenHAB(Driver):
 
                 if metric_local_id in self.now_metric_domain:
                     mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected, data_type_detected)
-                    data_type_mapped = mapped[1]
-                    value_mapped = mapped[0]
+                    try:
+                        data_type_mapped = mapped[1]
+                        value_mapped = mapped[0]
+                    except:
+                        data_type_mapped = data_type_detected
+                        value_mapped = value_detected
 
                     states.append({
                         "MetricLocalId": metric_local_id,
@@ -108,7 +112,7 @@ class OpenHAB(Driver):
         # Those items above be converted to things
         for item_to_thing in remain_item_list:
             item = self.openhab.get_item_raw(item_to_thing)
-            print("STATES ITEM: {}".format(item))
+            # print("STATES ITEM: {}".format(item))
 
             item_type = item['type']
             item_name = item['name']
@@ -134,8 +138,12 @@ class OpenHAB(Driver):
             if metric_local_id in self.now_metric_domain:
                 mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected,
                                                  data_type_detected)
-                data_type_mapped = mapped[1]
-                value_mapped = mapped[0]
+                try:
+                    data_type_mapped = mapped[1]
+                    value_mapped = mapped[0]
+                except:
+                    data_type_mapped = data_type_detected
+                    value_mapped = value_detected
 
                 states.append({
                     "MetricLocalId": metric_local_id,
@@ -147,7 +155,7 @@ class OpenHAB(Driver):
         return states
 
     def check_configuration_changes(self):
-        print('Check for changes')
+        # print('Check for changes')
         item_of_thing_list = []
         new_info = []
 
@@ -219,6 +227,7 @@ class OpenHAB(Driver):
         # Those items above be converted to things
         for item_to_thing in remain_item_list:
             item = self.openhab.get_item_raw(item_to_thing)
+            print("Item: {}".format(item))
             item_type = item['type']
             item_name = item['name']
             thing_name = item_name
@@ -256,34 +265,37 @@ class OpenHAB(Driver):
 
             new_info.append(thing_temp)
 
-        print("new_info: {}".format(new_info))
-        print("now_info: {}".format(self.now_info))
+        # print("new_info: {}".format(new_info))
+        # print("now_info: {}".format(self.now_info))
 
         hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
         hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
-
-        print("new_info: {}".format(new_info))
-        print("now_info: {}".format(self.now_info))
+        # print("new_info: {}".format(new_info))
+        # print("now_info: {}".format(self.now_info))
 
         if hash_now.hexdigest() == hash_pre.hexdigest():
-            print("not change")
+            self.logger.debug("Configuration don't change")
             return {
                 'is_change': False,
                 'new_info': new_info,
             }
 
         else:
-            print("change")
+            self.logger.debug("Configuration have change")
             return {
                 'is_change': True,
                 'new_info': new_info
             }
 
     def set_state(self, metric_local_id, metric_name, metric_domain, new_value):
-        print("SET STATE {} to {}".format(metric_local_id, new_value))
-        item = self.openhab.get_item(metric_local_id)
-        if isinstance(new_value, str):
-            item.command(new_value.upper())
+        # print("SET STATE {} to {}".format(metric_local_id, new_value))
+        try:
+            item = self.openhab.get_item(metric_local_id)
+            if isinstance(new_value, str):
+                item.command(new_value.upper())
+        except:
+            self.logger.error("Don't support {} set new_value: {}".format(metric_name, new_value))
+
 
 
 

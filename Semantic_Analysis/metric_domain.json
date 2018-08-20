@@ -43,5 +43,12 @@
     },
     "metric_type": "Gauge"
 
+  },
+
+  "unknown": {
+    "words": ["motion", "sensor", "binary"],
+    "value": "unknown",
+    "can_set_value": "unknown",
+    "metric_type": "unknown"
   }
 }

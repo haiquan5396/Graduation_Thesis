@@ -35,12 +35,12 @@ class ThingsBoard(Driver):
                 }
                 return [conn, headers]
             except:
-                print("Error connect to Platform")
+                self.logger.error("Error connect to Platform")
                 time.sleep(2)
                 continue
 
     def get_list_device_on_customes(self):
-        print("get list")
+        # print("get list")
         result = self.connect()
         conn = result[0]
         headers = result[1]
@@ -53,7 +53,7 @@ class ThingsBoard(Driver):
         return device_list
 
     def get_access_token_device(self, thing_local_id):
-        print("Get Access token device: ")
+        # print("Get Access token device: ")
         result = self.connect()
         conn = result[0]
         headers = result[1]
@@ -105,7 +105,7 @@ class ThingsBoard(Driver):
         return json_data["configuration"]["widgets"]["0c6413aa-8860-50e4-6eb8-935d21a1eacc"]["config"]["settings"]["gpioList"]
 
     def get_states(self):
-        print("get states")
+        # print("get states")
         states = []
         device_list = self.get_list_device_on_customes()
 
@@ -123,6 +123,7 @@ class ThingsBoard(Driver):
             conn.request("GET", url, headers=headers)
             response_data = conn.getresponse().read()
             response_json = json.loads(response_data.decode("utf-8"))
+            print(response_json)
 
             for telemetry in keys_telemetry_list:
                 item_state = response_json[telemetry][0]["value"]
@@ -149,6 +150,7 @@ class ThingsBoard(Driver):
     def check_configuration_changes(self):
         new_info = []
         device_list = self.get_list_device_on_customes()
+        print("list: {}".format(device_list))
         result = self.connect()
         conn = result[0]
         headers = result[1]
@@ -163,7 +165,6 @@ class ThingsBoard(Driver):
             conn.request("GET", url, headers=headers)
             response_data = conn.getresponse().read()
             response_json = json.loads(response_data.decode("utf-8"))
-
             thing_temp = {
                 'information':{
                     'ThingName': device["name"],
@@ -203,37 +204,31 @@ class ThingsBoard(Driver):
             thing_temp['metrics'] = metrics
             new_info.append(thing_temp)
 
-        print("new_info: {}".format(new_info))
-        print("now_info: {}".format(self.now_info))
+        # print("new_info: {}".format(new_info))
+        # print("now_info: {}".format(self.now_info))
 
         hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
         hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
-
-        print("new_info: {}".format(str(self.ordered(new_info))))
-        print("now_info: {}".format(str(self.ordered(self.now_info))))
+        #
+        # print("new_info: {}".format(str(self.ordered(new_info))))
+        # print("now_info: {}".format(str(self.ordered(self.now_info))))
 
         if hash_now.hexdigest() == hash_pre.hexdigest():
-            print("not change")
+            self.logger.debug("Configuration don't change")
             return {
                 'is_change': False,
                 'new_info': new_info,
             }
 
         else:
-            print("change")
+            self.logger.debug("Configuration have change")
             # self.now_info = new_info
             return {
                 'is_change': True,
                 'new_info': new_info
             }
 
-    def check_can_set_state(self, thing_type):
-        if thing_type == "light":
-            return "yes"
-        return "no"
-
     def set_state(self, metric_local_id, metric_name, metric_domain, new_value):
-        print("Set state {} into {}".format(metric_local_id, new_value))
         result = self.connect()
         conn = result[0]
         headers = result[1]
@@ -241,8 +236,8 @@ class ThingsBoard(Driver):
         if metric_domain == "switch":
             pin = metric_local_id.rsplit('-', 1)[1]
             device_id = metric_local_id.rsplit('-', 1)[0]
-            print("TACH : {}".format(metric_local_id.rsplit('-', 1)))
-            print("pin: {} device_id: {}".format(pin, device_id))
+            # print("TACH : {}".format(metric_local_id.rsplit('-', 1)))
+            # print("pin: {} device_id: {}".format(pin, device_id))
             if new_value == "on":
                 body = '{"method":"setGpioStatus","params":{"pin":' + pin + ',"enabled":true}}'
                 conn.request("POST", "/api/plugins/rpc/twoway/" + device_id, body=body, headers=headers)
@@ -250,9 +245,9 @@ class ThingsBoard(Driver):
                 body = '{"method":"setGpioStatus","params":{"pin":' + pin + ',"enabled":false}}'
                 conn.request("POST", "/api/plugins/rpc/twoway/" + device_id, body=body, headers=headers)
             else:
-                print("Error set state")
+                self.logger.error("Don't support type of new_value: {}".format(new_value))
         else:
-            print("Type not support set state")
+            self.logger.error("Don't support {} set new_value: {}".format(metric_name, new_value))
 
 
 if __name__ == '__main__':

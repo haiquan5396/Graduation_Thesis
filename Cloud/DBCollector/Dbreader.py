@@ -3,10 +3,25 @@ from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
 from kombu.utils.compat import nested
 from influxdb import InfluxDBClient
 import sys
+import logging
 
 
 class Dbreader:
     def __init__(self, broker_cloud, host_influxdb):
+        # ----->configure logging <-----
+        # if not os.path.exists('logging'):
+        #     os.makedirs('logging')
+        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
+        #                               backupCount=1)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
+                                      datefmt='%m-%d-%Y %H:%M:%S')
+        handler.setFormatter(formatter)
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.DEBUG)
+        # -----> end configure logging <-----
+
         self.clientDB = InfluxDBClient(host_influxdb, 8086, 'root', 'root', 'Collector_DB')
         self.clientDB.create_database('Collector_DB')
 
@@ -15,7 +30,7 @@ class Dbreader:
         self.exchange = Exchange("IoT", type="direct")
 
     def api_get_metric(self, body, message):
-        print("API api_get_metric")
+        self.logger.info("API get metric")
         list_metric_id = json.loads(body)['body']["list_metric_id"]
         reply_to = json.loads(body)['header']['reply_to']
         metrics = self.get_data_metric(list_metric_id)
@@ -28,7 +43,7 @@ class Dbreader:
         self.publish_messages(message_response, self.producer_connection, reply_to, self.exchange)
 
     def api_get_metric_history(self, body, message):
-        print("API api_get_metric_history")
+        self.logger.info("API get metric history")
         list_metric_id = json.loads(body)['body']["list_metric_id"]
         reply_to = json.loads(body)['header']['reply_to']
         start_time = json.loads(body)['body']["start_time"]
@@ -60,12 +75,12 @@ class Dbreader:
                     }
                 }
                 metrics.append(metric)
-        print("metrics: {}".format(metrics))
+        # print("metrics: {}".format(metrics))
         return metrics
 
     def get_data_metric_history(self, list_metric_id, start_time, end_time, scale):
         metrics = []
-        print(scale)
+        # print(scale)
         for metric_id in list_metric_id:
             query_statement_type_field = """SHOW FIELD KEYS ON \"Collector_DB\" FROM \"{}\"""".format(metric_id)
             query_result_type_field = self.clientDB.query(query_statement_type_field)
@@ -164,9 +179,8 @@ class Dbreader:
 
         return metrics
 
-    @staticmethod
-    def publish_messages(message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
-
+    def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
+        self.logger.debug("Message publish to queue {}: {}".format(queue_name, message))
         if queue_routing_key is None:
             queue_routing_key = queue_name
         if routing_key is None:
@@ -182,7 +196,6 @@ class Dbreader:
                 routing_key=routing_key,
                 retry=True
             )
-
 
     def run(self):
 
@@ -200,9 +213,9 @@ class Dbreader:
                     while True:
                         self.consumer_connection.drain_events()
             except (ConnectionRefusedError, exceptions.OperationalError):
-                print('Connection lost')
+                self.logger.error('Connection to Broker Cloud is lost')
             except self.consumer_connection.connection_errors:
-                print('Connection error')
+                self.logger.error('Connection to Broker Cloud is error')
 
 
 if __name__ == '__main__':
