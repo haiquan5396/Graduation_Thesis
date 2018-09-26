@@ -112,12 +112,12 @@ class ForwarderCloudToFog:
             try:
                 self.rabbitmq_connection.ensure_connection(max_retries=3)
                 with nested(
-                        Consumer(self.rabbitmq_connection, queues=queue_add_platform, callbacks=[self.on_message_add_platform]),
-                        Consumer(self.rabbitmq_connection, queues=queue_check_config, callbacks=[self.on_message_check_config]),
-                        Consumer(self.rabbitmq_connection, queues=queue_collect, callbacks=[self.on_message_collect]),
-                        Consumer(self.rabbitmq_connection, queues=queue_set_state, callbacks=[self.on_message_set_state]),
-                        Consumer(self.rabbitmq_connection, queues=queue_update_config,callbacks=[self.on_message_update_now_configuration]),
-                        Consumer(self.rabbitmq_connection, queues=queue_check_active,callbacks=[self.on_message_check_platform_active])
+                        Consumer(self.rabbitmq_connection, queues=queue_add_platform, callbacks=[self.on_message_add_platform], no_ack=True),
+                        Consumer(self.rabbitmq_connection, queues=queue_check_config, callbacks=[self.on_message_check_config], no_ack=True),
+                        Consumer(self.rabbitmq_connection, queues=queue_collect, callbacks=[self.on_message_collect], no_ack=True),
+                        Consumer(self.rabbitmq_connection, queues=queue_set_state, callbacks=[self.on_message_set_state], no_ack=True),
+                        Consumer(self.rabbitmq_connection, queues=queue_update_config,callbacks=[self.on_message_update_now_configuration], no_ack=True),
+                        Consumer(self.rabbitmq_connection, queues=queue_check_active,callbacks=[self.on_message_check_platform_active], no_ack=True)
                 ):
                     while True:
                         self.rabbitmq_connection.drain_events()

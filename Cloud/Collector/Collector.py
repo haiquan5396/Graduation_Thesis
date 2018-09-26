@@ -90,7 +90,7 @@ class Collector():
 
         self.list_platform_id = temp
         self.collect()
-        self.logger.info('Updated list of platform_id: ', str(self.list_platform_id))
+        self.logger.info('Updated list of platform_id: {}'.format(self.list_platform_id))
 
     def handle_notification(self, body, message):
         self.logger.info('Have Notification')
