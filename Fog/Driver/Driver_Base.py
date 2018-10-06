@@ -8,6 +8,7 @@ import os
 import copy
 import requests
 import time
+from Performance_Monitoring.message_monitor_new_model import MessageMonitor
 
 
 class Driver:
@@ -107,13 +108,16 @@ class Driver:
         self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_update_now_configuration', self.api_update_now_configuration)
 
         self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_platform_active')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_platform_active', self.api_check_platform_active)
+        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_platform_active', self.check_platform_active)
 
         self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
         self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
 
         self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state', qos=2)
         self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
+        self.clientMQTT.unsubscribe(topic_response)
+        self.clientMQTT.message_callback_remove(topic_response)
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
     def handle_info_from_registry(self, info_receive_from_registry, init_time=False):
         new_info = []
@@ -201,6 +205,7 @@ class Driver:
         new_value = body['new_value']
         self.logger.info("API set state: {} to {}".format(metric_name, new_value))
         self.set_state(metric_local_id, metric_name, metric_domain, new_value)
+        self.message_monitor.end_message(message['header'], 'driver','api_set_states')
 
     def on_disconnect(self, client, userdata, rc):
         if rc != 0:
@@ -219,7 +224,7 @@ class Driver:
             self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_update_now_configuration',self.api_update_now_configuration)
 
             self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_platform_active')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_platform_active', self.api_check_platform_active)
+            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_platform_active', self.check_platform_active)
 
             self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state', qos=2)
             self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
@@ -234,6 +239,10 @@ class Driver:
         thread_push_get_state.setDaemon(True)
         thread_push_get_state.start()
 
+        thread_push_check_active= threading.Thread(target=self.check_platform_active)
+        thread_push_check_active.setDaemon(True)
+        thread_push_check_active.start()
+
         self.clientMQTT.loop_forever()
 
     # def test(self):
@@ -241,6 +250,7 @@ class Driver:
     #         self.push_get_state()
 
     def push_configuration_changes(self):
+        # time.sleep(10)
         while 1:
             message = {
                 "header":{},
@@ -256,16 +266,19 @@ class Driver:
                 self.logger.info("Push to Registry info because have change: {}".format(message))
 
                 self.clientMQTT.publish('driver/response/forwarder/api_check_configuration_changes', json.dumps(message))
+            else:
+                self.logger.info("Don't push to Registry info because no change: {}".format(message))
             time.sleep(self.time_push_config)
 
     def push_get_state(self):
         while 1:
-            states = self.get_states()
+            start = time.time()
             message = {
                 "header":{},
                 "body": {}
             }
-
+            message['header']['message_monitor'] = self.message_monitor.start_message(message['header'], 'driver', 'api_get_states')
+            states = self.get_states()
             message['header']['reply_to'] = 'driver.response.collector.api_get_states'
             message['header']['PlatformId'] = self.platform_id
             message['header']['mode'] = "PUSH"
@@ -273,6 +286,7 @@ class Driver:
             message['body']['states'] = states
             self.logger.debug("Push state to Filter")
             self.clientMQTT.publish('driver/response/filter/api_get_states', json.dumps(message))
+            self.logger.warning("TIME: {}".format(time.time() - start))
             time.sleep(1)
 
     def get_states(self):
@@ -303,25 +317,32 @@ class Driver:
 
         return registration
 
-    def api_check_platform_active(self, client, userdata, msg):
-        self.logger.debug('API check platform active')
-        body = json.loads(msg.payload.decode('utf-8'))
-        message_response = {
-            "header": body['header'],
-            "body": {}
-        }
+    def check_platform_active(self):
+        # time.sleep(10)
+        while 1:
 
-        try:
-            response = requests.get('http://' + self.host + ':' + self.port)
-            if response.status_code == 200:
-                message_response['body']['active'] = True
+            # body = json.loads(msg.payload.decode('utf-8'))
+            message = {
+                "header": {
+                    'PlatformId': self.platform_id,
+                    'reply_to': 'driver.response.registry.api_check_platform_active'
+                },
+                "body": {}
+            }
 
-            else:
-                return
-        except:
-            return
-
-        self.clientMQTT.publish('driver/response/forwarder/api_check_platform_active', json.dumps(message_response))
+            try:
+                response = requests.get('http://' + self.host + ':' + self.port)
+                if response.status_code == 200:
+                    message['body']['active'] = True
+                    self.clientMQTT.publish('driver/response/forwarder/api_check_platform_active', json.dumps(message))
+                    self.logger.debug('Check platform active and send to Registry')
+                else:
+                    self.logger.debug('Check platform active and realize it inactive')
+                    pass
+            except:
+                self.logger.debug('Check platform active and raise exception')
+                pass
+            time.sleep(10)
 
     def detect_metric_domain(self, sentence, value):
         # value must casted to the corresponding type before pass to function

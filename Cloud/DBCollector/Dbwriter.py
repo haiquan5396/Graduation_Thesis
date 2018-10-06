@@ -1,10 +1,11 @@
 from influxdb import InfluxDBClient
 import json
-from kombu import Connection, Consumer, Exchange, Queue, exceptions
+from kombu import Connection, Consumer, Exchange, Queue, exceptions, Producer
 import sys
 from datetime import datetime
 import logging
-
+from Performance_Monitoring.message_monitor_new_model import MessageMonitor
+import time
 
 class DBwriter:
     def __init__(self, broker_cloud, host_influxdb):
@@ -27,13 +28,16 @@ class DBwriter:
         self.clientDB.create_database('Collector_DB')
 
         self.consumer_connection = Connection(broker_cloud)
+        self.producer_connection = Connection(broker_cloud)
         self.exchange = Exchange("IoT", type="direct")
+        self.message_monitor = MessageMonitor('0.0.0.0', 8086)
 
     def write_db(self, data_points):
 
         self.logger.debug("Received data points: {}".format(data_points))
+        records = []
         for point in data_points:
-            record = [{
+            records.append({
                 'measurement': point['MetricId'],
                 'tags': {
                     'DataType': point['DataType'],
@@ -42,18 +46,51 @@ class DBwriter:
                     'Value': point['Value'],
                 },
                 'time': point['TimeCollect']
-            }]
-            try:
-                self.clientDB.write_points(record)
-                self.logger.info("Updated Database")
-            except:
-                self.logger.error("Can't write to database : {}".format(point['MetricId']))
-                self.clientDB.drop_measurement(measurement=point['MetricId'])
-                self.logger.warning("Delete mesurement: {}".format(point['MetricId']))
+            })
+        try:
+            self.clientDB.write_points(records)
+            #self.logger.info("Updated Database")
+        except:
+            self.logger.error("Can't write to database : {}".format(point['MetricId']))
+            # self.clientDB.drop_measurement(measurement=point['MetricId'])
+            self.logger.warning("Delete mesurement: {}".format(point['MetricId']))
 
     def api_write_db(self, body, message):
         data_points = json.loads(body)['body']['data_points']
+        start = time.time()
         self.write_db(data_points)
+        self.logger.warning("TIME: {}".format(time.time()-start))
+
+        # notify to script
+        header = json.loads(body)['header']
+        notification_message = {
+            'header': {},
+            'body': {}
+        }
+        #print(json.loads(body)['header'])
+        queue_name = 'notification.script'
+        notification_message['header']['message_monitor'] = self.message_monitor.monitor(json.loads(body)['header'], 'write_db', 'api_write_db')
+        self.publish_messages(notification_message, self.producer_connection, queue_name, self.exchange)
+        self.logger.warning("TIME: {}".format(time.time() - start))
+        message.ack()
+
+    def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
+        self.logger.debug("message: {}".format(message))
+        if queue_routing_key is None:
+            queue_routing_key = queue_name
+        if routing_key is None:
+            routing_key = queue_name
+
+        # queue_publish = Queue(name=queue_name, exchange=exchange, routing_key=queue_routing_key, message_ttl=20)
+
+        conn.ensure_connection()
+        with Producer(conn) as producer:
+            producer.publish(
+                json.dumps(message),
+                exchange=exchange.name,
+                routing_key=routing_key,
+                retry=True
+            )
 
     def run(self):
         queue_write_db = Queue(name='dbwriter.request.api_write_db', exchange=self.exchange,
@@ -61,7 +98,7 @@ class DBwriter:
         while 1:
             try:
                 self.consumer_connection.ensure_connection(max_retries=1)
-                with Consumer(self.consumer_connection, queues=queue_write_db, callbacks=[self.api_write_db], no_ack=True):
+                with Consumer(self.consumer_connection, queues=queue_write_db, callbacks=[self.api_write_db]):
                     while True:
                         self.consumer_connection.drain_events()
             except (ConnectionRefusedError, exceptions.OperationalError):

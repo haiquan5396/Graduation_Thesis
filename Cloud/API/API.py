@@ -6,8 +6,9 @@ import datetime
 import os
 from flask_cors import CORS
 import paramiko
-
-
+sys.path.append('../../')
+from Performance_Monitoring.message_monitor_new_model import MessageMonitor
+import time
 MODE_CODE = "Develop"
 # MODE_CODE = "Deploy"
 
@@ -16,7 +17,7 @@ if MODE_CODE == "Deploy":
 else:
     BROKER_CLOUD = "0.0.0.0"
 
-
+message_monitor = MessageMonitor('0.0.0.0', 8086)
 rabbitmq_connection = Connection(BROKER_CLOUD)
 exchange = Exchange("IoT", type="direct")
 
@@ -109,11 +110,11 @@ def api_get_sources_history_by_platform_id(platform_id, source_status, metric_st
 @app.route('/api/metric', methods=['POST'])
 def api_set_state():
     request_message = request.json
-    print("NHAN SET_STATE: {}".format(request_message))
-    source_id = request_message['SourceId']
-    metric_id = request_message['MetricId']
-    new_state = request_message['new_value']
-    return jsonify(set_state(source_id, metric_id, new_state))
+    #print("NHAN SET_STATE: {}".format(request_message))
+    source_id = request_message['body']['SourceId']
+    metric_id = request_message['body']['MetricId']
+    new_state = request_message['body']['new_value']
+    return jsonify(set_state(request_message['header'], source_id, metric_id, new_state))
 
 
 @app.route('/api/platform', methods=['POST'])
@@ -309,7 +310,7 @@ def get_list_platforms(platform_status):
         # request to api_get_list_platform of Registry
         request_routing_key = 'registry.request.api_get_list_platforms'
         message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
-        # print(message_response)
+        print(message_response)
         if 'list_platforms' in message_response['body']:
             return message_response['body']['list_platforms']
         else:
@@ -352,9 +353,14 @@ def get_sources_info(source_status=None, metric_status=None, platform_id=None, s
 
 
 def get_sources(source_status=None, metric_status=None, platform_id=None, source_id=None):
+
     try:
+        start = time.time()
         list_sources_info = get_sources_info(source_status=source_status, metric_status=metric_status, platform_id=platform_id, source_id=source_id)
+        print("TIME GET_INFOR_SOURCE_PLATFORM: {}".format(time.time() - start))
+        start = time.time()
         list_sources_state = get_sources_state_by_list_source(list_sources_info)
+        print("TIME GET_STATE_SOURCE_PLATFORM: {}".format(time.time()-start))
         return list_sources_state
 
     except (KeyError, IndexError):
@@ -397,7 +403,7 @@ def get_sources_state_by_list_source(list_sources_info):
     return list_things_state
 
 
-def set_state(source_id, metric_id, new_value):
+def set_state(header, source_id, metric_id, new_value):
     try:
         source = get_sources_info(source_id=source_id)[0]
     except:
@@ -427,7 +433,8 @@ def set_state(source_id, metric_id, new_value):
 
                 message_request ={
                     'header': {
-                        "PlatformId": source['information']['PlatformId']
+                        "PlatformId": source['information']['PlatformId'],
+                        "message_monitor": header['message_monitor']
                     },
                     'body': {
                         'information': source['information'],
@@ -435,7 +442,8 @@ def set_state(source_id, metric_id, new_value):
                         'new_value': value_mapped
                     }
                 }
-                print("SET STATE: {}".format(message_request))
+
+                #print("SET STATE: {}".format(message_request))
                 request_routing_key = 'driver.request.api_set_state'
                 # message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
                 # # message_response = {"items": [{'item_global_id': "", 'item_state': "", 'last_changed': ""}]}

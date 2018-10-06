@@ -5,7 +5,7 @@ from kombu.utils.compat import nested
 import sys
 import logging
 from datetime import datetime
-
+import time
 
 class Collector():
     def __init__(self, broker_cloud, time_collect):
@@ -36,7 +36,7 @@ class Collector():
         # threading.Timer(self.time_collect, self.collect).start()
 
     def collect_by_platform_id(self, platform_id):
-        self.logger.info('Collect data from platform_id: ', str(platform_id))
+        self.logger.info('Collect data from platform_id: {}'.format(str(platform_id)))
         message_request = {
             'header': {
                 'reply_to': 'driver.response.collector.api_get_states',
@@ -49,7 +49,8 @@ class Collector():
         self.publish_messages(message_request, self.producer_connection, queue_name, self.exchange)
 
     def handle_collect_by_platform_id(self, body, message):
-        self.logger.info('Received state from platform_id: ', json.loads(body)['header']['PlatformId'])
+        start = time.time()
+        self.logger.info('Received state from platform_id: {}'.format(json.loads(body)['header']['PlatformId']))
         states = json.loads(body)['body']['states']
         self.logger.debug('State : {}'.format(states))
         points = []
@@ -61,14 +62,16 @@ class Collector():
                 "TimeCollect": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             })
 
-        message = {
-            'header': {},
+        data_points = {
+            'header': json.loads(body)['header'],
             'body': {
                 'data_points': points
             }
         }
         queue_name = 'dbwriter.request.api_write_db'
-        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+        self.publish_messages(data_points, self.producer_connection, queue_name, self.exchange)
+        self.logger.warning("TIME: {}".format(time.time() - start))
+        message.ack()
 
     def get_list_platforms(self):
         self.logger.info("Get list platforms from Registry")
@@ -134,7 +137,7 @@ class Collector():
                             Consumer(self.consumer_connection, queues=queue_list_platforms, callbacks=[self.handle_get_list],
                                      no_ack=True),
                             Consumer(self.consumer_connection, queues=queue_get_states,
-                                     callbacks=[self.handle_collect_by_platform_id], no_ack=True)):
+                                     callbacks=[self.handle_collect_by_platform_id])):
                     while True:
                         self.consumer_connection.drain_events()
             except (ConnectionRefusedError, exceptions.OperationalError):

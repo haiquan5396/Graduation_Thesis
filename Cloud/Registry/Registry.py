@@ -30,7 +30,7 @@ class Registry:
         self.time_check_platform_active = time_check_platform_active
         self.time_inactive_platform = time_inactive_platform
         self.mode = mode
-        self.dbcommunitor = DbCommunicator("Registry", "root", "root", "0.0.0.0")
+        self.dbcommunitor = DbCommunicator("Registry", "root", "root", "172.17.0.1")
 
         self.producer_connection = Connection(broker_cloud)
         self.consumer_connection = Connection(broker_cloud)
@@ -52,28 +52,34 @@ class Registry:
 
     def check_platform_active(self):
         while 1:
-            queue_name = 'driver.request.api_check_platform_active'
+            # queue_name = 'driver.request.api_check_platform_active'
             list_platforms = self.dbcommunitor.get_platforms(platform_status='all')
             # print("list_platform: {}".format(list_platforms))
             for platform in list_platforms:
-                self.logger.info("Send check active message to platform: {}".format(platform['PlatformId']))
-                message = {
-                    'header': {
-                        'PlatformId': platform['PlatformId'],
-                        'reply_to': 'driver.response.registry.api_check_platform_active'
-                    }
-                }
-                self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+                # self.logger.info("Send check active message to platform: {}".format(platform['PlatformId']))
+                # message = {
+                #     'header': {
+                #         'PlatformId': platform['PlatformId'],
+                #         'reply_to': 'driver.response.registry.api_check_platform_active'
+                #     }
+                # }
+                # self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
                 if (time.time() - platform['LastResponse']) > self.time_inactive_platform and platform['PlatformStatus'] == 'active':
                     self.logger.info(" Change status of platform {} - {} to inactive".format(platform['PlatformName'], platform['PlatformId']))
                     platform['PlatformStatus'] = 'inactive'
                     sources = self.dbcommunitor.get_sources(platform_id=platform['PlatformId'], get_source_id_of_metric=True)
+                    info_sources = []
+                    info_metrics = []
                     for source in sources:
                         source['information']['SourceStatus'] = 'inactive'
                         for metric in source['metrics']:
                             metric['MetricStatus'] = 'inactive'
-                            self.dbcommunitor.update_metric(info_metric=metric)
-                        self.dbcommunitor.update_info_source(info=source['information'])
+                            info_metrics.append(metric)
+                            # self.dbcommunitor.update_metric(info_metric=metric)
+                        info_sources.append(source['information'])
+                        # self.dbcommunitor.update_info_source(info=source['information'])
+                    self.dbcommunitor.update_metrics(info_metrics)
+                    self.dbcommunitor.update_info_sources(info_sources)
                     self.dbcommunitor.update_platform(info_platform=platform)
 
                     self.send_notification_to_collector()
@@ -85,21 +91,24 @@ class Registry:
         now_info = self.dbcommunitor.get_sources(platform_id=platform_id, source_status="all", metric_status="all")
         inactive_sources = copy.deepcopy(now_info)
 
+        db_update_source = []
+        db_update_metric = []
+        db_new_source = []
+        db_new_metric = []
+
         for new_source in new_info:
             info_new_source = copy.deepcopy(new_source['information'])
             if 'SourceId' in info_new_source:
                 for now_source in now_info:
-                    info_now_source = copy.deepcopy(now_source['information'])
-                    if info_now_source["SourceId"] == info_new_source["SourceId"]:
+                    if now_source['information']["SourceId"] == info_new_source["SourceId"]:
                         info_new_source['SourceStatus'] = 'active'
                         # if info_now_source['SourceType'] == 'Thing':
                         #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
                         #             or info_now_source['Description'] != info_new_source['Description']
                         #             or info_now_source['Label'] != info_new_source['Label']
                         #             or info_now_source['ThingName'] != info_new_source['ThingName']):
-
-                        self.dbcommunitor.update_info_source(info=info_new_source)
-
+                        db_update_source.append(info_new_source)
+                        # self.dbcommunitor.update_info_source(info=info_new_source)
                         # elif info_now_source['SourceType'] == 'Platform':
                         #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
                         #             or info_now_source['Description'] != info_new_source['Description']
@@ -122,23 +131,26 @@ class Registry:
                                         # temp_metric = copy.deepcopy(new_metric)
                                         new_metric['MetricStatus'] = 'active'
                                         new_metric['SourceId'] = info_new_source['SourceId']
-                                        self.dbcommunitor.update_metric(info_metric=new_metric)
+                                        db_update_metric.append(new_metric)
+                                        # self.dbcommunitor.update_metric(info_metric=new_metric)
                                         inactive_metrics.remove(now_metric)
                                         break
                             else:
                                 # New metric
-                                #temp_metric = copy.deepcopy(new_metric)
+                                # temp_metric = copy.deepcopy(new_metric)
                                 new_metric['SourceId'] = info_new_source['SourceId']
                                 new_metric['MetricStatus'] = 'active'
                                 new_metric['MetricId'] = str(uuid.uuid4())
-                                self.dbcommunitor.update_metric(info_metric=new_metric, new_metric=True)
+                                db_new_metric.append(new_metric)
+                                # self.dbcommunitor.update_metric(info_metric=new_metric, new_metric=True)
 
                         if len(inactive_metrics) != 0:
                             # Inactive metrics
                             for metric in inactive_metrics:
                                 metric['SourceId'] = info_new_source['SourceId']
                                 metric['MetricStatus'] = 'inactive'
-                                self.dbcommunitor.update_metric(info_metric=metric)
+                                db_update_metric.append(metric)
+                                # self.dbcommunitor.update_metric(info_metric=metric)
 
                         inactive_sources.remove(now_source)
                         break
@@ -147,22 +159,38 @@ class Registry:
                 new_source_id = str(uuid.uuid4())
                 new_source['information']['SourceId'] = new_source_id
                 new_source['information']['SourceStatus'] = 'active'
-                self.dbcommunitor.update_info_source(info=new_source['information'], new_source=True)
+                db_new_source.append(new_source['information'])
+                # self.dbcommunitor.update_info_source(info=new_source['information'], new_source=True)
                 for metric in new_source['metrics']:
                     metric['SourceId'] = new_source_id
                     metric['MetricStatus'] = 'active'
                     metric['MetricId'] = str(uuid.uuid4())
-                    self.dbcommunitor.update_metric(info_metric=metric, new_metric=True)
+                    db_new_metric.append(metric)
+                    # self.dbcommunitor.update_metric(info_metric=metric, new_metric=True)
 
         if len(inactive_sources) != 0:
             # Inactive sources
             for source in inactive_sources:
                 source['information']['SourceStatus'] = 'inactive'
-                self.dbcommunitor.update_info_source(info=source['information'])
+                db_update_source.append(source['information'])
+                # self.dbcommunitor.update_info_source(info=source['information'])
                 for metric in source['metrics']:
                     metric['MetricStatus'] = 'inactive'
                     metric['SourceId'] = source['information']['SourceId']
-                    self.dbcommunitor.update_metric(info_metric=metric)
+                    db_update_metric.append(metric)
+                    # self.dbcommunitor.update_metric(info_metric=metric)
+        start = time.time()
+        self.dbcommunitor.update_info_sources(infos=db_new_source, new_source=True)
+        print("Write DB update_info_sources_new: {}".format(time.time() - start))
+        start = time.time()
+        self.dbcommunitor.update_info_sources(infos=db_update_source)
+        print("Write DB update_info_sources_active_and_inactive: {}".format(time.time() - start))
+        start = time.time()
+        self.dbcommunitor.update_metrics(info_metrics=db_new_metric, new_metric=True)
+        print("Write DB update_metrics_new: {}".format(time.time() - start))
+        start = time.time()
+        self.dbcommunitor.update_metrics(info_metrics=db_update_metric)
+        print("Write DB update_metrics_active_and_inactive: {}".format(time.time()-start))
 
     def handle_configuration_changes(self, body, message):
         header = json.loads(body)['header']
@@ -179,22 +207,26 @@ class Registry:
                     self.update_changes_to_db(new_info, platform_id)
 
             else:
+                start = time.time()
                 self.logger.info('Platform have Id: {} changed sources configuration'.format(platform_id))
+                self.logger.debug("message body: {}".format(body))
                 new_info = body['new_info']
                 self.update_changes_to_db(new_info, platform_id)
+                end= time.time()
+                print("process time: {}".format(end - start))
 
-        message = {
-            'header': {
-                'PlatformId': platform_id
-            },
-            'body': {
-                'active_sources': self.dbcommunitor.get_sources(platform_id=platform_id, source_status='active', metric_status='active')
+            message = {
+                'header': {
+                    'PlatformId': platform_id
+                },
+                'body': {
+                    'active_sources': self.dbcommunitor.get_sources(platform_id=platform_id, source_status='active', metric_status='active')
+                }
+
             }
-
-        }
-        queue_name = 'driver.request.api_update_now_configuration'
-        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
-        # print("now config: {}".format(message))
+            queue_name = 'driver.request.api_update_now_configuration'
+            self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+            # print("now config: {}".format(message))
 
     def api_get_list_platforms(self, body, message):
         self.logger.info("API get list platform with platform_status")
@@ -378,9 +410,9 @@ if __name__ == '__main__':
             "autocommit": "True"
         }
 
-        TIME_INACTIVE_PLATFORM = 60     # Time when platform is marked inactive
+        TIME_INACTIVE_PLATFORM = 120     # Time when platform is marked inactive
         TIME_UPDATE_CONF = 5            # Time when registry send request update conf to Driver
-        TIME_CHECK_PLATFORM_ACTIVE = 5  # Time when check active_platform in system
+        TIME_CHECK_PLATFORM_ACTIVE = 15  # Time when check active_platform in system
     else:
         BROKER_CLOUD = sys.argv[1]  #rabbitmq
         MODE = sys.argv[2] # or PUSH or PULL

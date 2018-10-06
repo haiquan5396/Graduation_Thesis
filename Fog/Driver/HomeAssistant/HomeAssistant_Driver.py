@@ -149,6 +149,6 @@ if __name__ == '__main__':
     # MODE = sys.argv[1]
     # TIME_PUSH = int(sys.argv[2])
     MODE = 'PULL'
-    TIME_PUSH = 5
+    TIME_PUSH = 15
     home_assistant = HomeAssistant(CONFIG_PATH, TIME_PUSH)
     home_assistant.run()
