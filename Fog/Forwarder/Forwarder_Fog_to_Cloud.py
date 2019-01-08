@@ -36,7 +36,7 @@ class ForwarderFogToCloud:
         self.publish_messages(message, self.rabbitmq_connection, queue_name, self.exchange)
 
     def on_message_filter(self, client, userdata, msg):
-        start = time.time()
+        # start = time.time()
         self.logger.info('Forward from Filter to Collector vs Rule Engine: api_get_states')
         message = json.loads(msg.payload.decode("utf-8"))
 
@@ -48,7 +48,7 @@ class ForwarderFogToCloud:
         # publish to rule_engine
         queue_rule = 'rule.request.states'
         self.publish_messages(message, self.rabbitmq_connection, queue_rule, self.exchange)
-        self.logger.warning("TIME: {}".format(time.time() - start))
+        # self.logger.warning("TIME: {}".format(time.time() - start))
 
     def on_message_add_platform(self, client, userdata, msg):
         self.logger.info('Forward from Driver to Registry: api_add_platform')

@@ -110,7 +110,7 @@ def api_get_sources_history_by_platform_id(platform_id, source_status, metric_st
 @app.route('/api/metric', methods=['POST'])
 def api_set_state():
     request_message = request.json
-    #print("NHAN SET_STATE: {}".format(request_message))
+    print("NHAN SET_STATE: {}".format(request_message))
     source_id = request_message['body']['SourceId']
     metric_id = request_message['body']['MetricId']
     new_state = request_message['body']['new_value']
@@ -355,12 +355,12 @@ def get_sources_info(source_status=None, metric_status=None, platform_id=None, s
 def get_sources(source_status=None, metric_status=None, platform_id=None, source_id=None):
 
     try:
-        start = time.time()
+        # start = time.time()
         list_sources_info = get_sources_info(source_status=source_status, metric_status=metric_status, platform_id=platform_id, source_id=source_id)
-        print("TIME GET_INFOR_SOURCE_PLATFORM: {}".format(time.time() - start))
+        # print("TIME GET_INFOR_SOURCE_PLATFORM: {}".format(time.time() - start))
         start = time.time()
         list_sources_state = get_sources_state_by_list_source(list_sources_info)
-        print("TIME GET_STATE_SOURCE_PLATFORM: {}".format(time.time()-start))
+        # print("TIME GET_STATE_SOURCE_PLATFORM: {}".format(time.time()-start))
         return list_sources_state
 
     except (KeyError, IndexError):
@@ -456,6 +456,7 @@ def set_state(header, source_id, metric_id, new_value):
                         routing_key=request_routing_key,
                         retry=True
                     )
+
                 return "Public set state"
 
             else:

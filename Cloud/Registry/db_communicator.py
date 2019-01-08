@@ -32,8 +32,8 @@ class DbCommunicator:
                 pass
 
     def get_sources(self, platform_id=None, source_id=None, source_status=None, source_type=None, metric_status=None, get_metric=True, get_source_id_of_metric=False):
-        start = time.time()
-        start_tong = time.time()
+        # start = time.time()
+        # start_tong = time.time()
         cnx_1 = self.get_connection_to_db()
         cursor_1 = cnx_1.cursor()
         have_where = False
@@ -83,7 +83,7 @@ class DbCommunicator:
         query_join = query_join + """ ORDER BY sources.SourceId ASC"""
         # print(query_join)
         cursor_1.execute(query_join)
-        print("TIME QUERRY thong tin SOURCE API: {}".format(time.time() - start))
+        # print("TIME QUERRY thong tin SOURCE API: {}".format(time.time() - start))
 
         rows_source = cursor_1.fetchall()
         start_index = 0
@@ -140,7 +140,7 @@ class DbCommunicator:
         cnx_1.commit()
         cursor_1.close()
         cnx_1.close()
-        print("TONG TIME QUERRY SOURCE API: {}".format(time.time()-start_tong))
+        # print("TONG TIME QUERRY SOURCE API: {}".format(time.time()-start_tong))
         return sources
 
     def get_metrics(self, cursor_1, source_id=None, metric_status=None, get_source_id=False):
@@ -210,9 +210,9 @@ class DbCommunicator:
                                        info['LocalId'], str(info['SourceId'])))
                 if info['SourceType'] == "Thing":
                     records_thing.append((info['ThingName'], str(info['SourceId'])))
-            start = time.time()
+            # start = time.time()
             cursor_1.executemany("""UPDATE IoTSource SET EndPoint=%s, SourceStatus=%s, Description=%s, Label=%s, LocalId=%s  WHERE SourceId=%s""", records_source)
-            print("THOI GIAN DB SOURCE: {}".format(time.time()-start))
+            # print("THOI GIAN DB SOURCE: {}".format(time.time()-start))
             if len(records_thing) > 0:
 
                 cursor_1.executemany("""UPDATE Thing SET ThingName=%s  WHERE ThingGlobalId=%s""", records_thing)

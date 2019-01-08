@@ -36,7 +36,7 @@ class MessageMonitor:
             header['message_monitor']['end_time'] = end_time
             header['message_monitor']['to_service'] = name_service
             header['message_monitor']['process_time'] = end_time - start_time
-            print(end_time - start_time)
+            # print(end_time - start_time)
             header['message_monitor']['to_function'] = name_function
 
             #print("write db monitor {}".format(header['message_monitor']))

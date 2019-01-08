@@ -49,7 +49,7 @@ class Collector():
         self.publish_messages(message_request, self.producer_connection, queue_name, self.exchange)
 
     def handle_collect_by_platform_id(self, body, message):
-        start = time.time()
+        #start = time.time()
         self.logger.info('Received state from platform_id: {}'.format(json.loads(body)['header']['PlatformId']))
         states = json.loads(body)['body']['states']
         self.logger.debug('State : {}'.format(states))
@@ -70,7 +70,7 @@ class Collector():
         }
         queue_name = 'dbwriter.request.api_write_db'
         self.publish_messages(data_points, self.producer_connection, queue_name, self.exchange)
-        self.logger.warning("TIME: {}".format(time.time() - start))
+        #self.logger.warning("TIME: {}".format(time.time() - start))
         message.ack()
 
     def get_list_platforms(self):

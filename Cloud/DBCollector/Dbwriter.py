@@ -52,14 +52,14 @@ class DBwriter:
             #self.logger.info("Updated Database")
         except:
             self.logger.error("Can't write to database : {}".format(point['MetricId']))
-            # self.clientDB.drop_measurement(measurement=point['MetricId'])
+            self.clientDB.drop_measurement(measurement=point['MetricId'])
             self.logger.warning("Delete mesurement: {}".format(point['MetricId']))
 
     def api_write_db(self, body, message):
         data_points = json.loads(body)['body']['data_points']
-        start = time.time()
+        # start = time.time()
         self.write_db(data_points)
-        self.logger.warning("TIME: {}".format(time.time()-start))
+        # self.logger.warning("TIME: {}".format(time.time()-start))
 
         # notify to script
         header = json.loads(body)['header']
@@ -71,7 +71,6 @@ class DBwriter:
         queue_name = 'notification.script'
         notification_message['header']['message_monitor'] = self.message_monitor.monitor(json.loads(body)['header'], 'write_db', 'api_write_db')
         self.publish_messages(notification_message, self.producer_connection, queue_name, self.exchange)
-        self.logger.warning("TIME: {}".format(time.time() - start))
         message.ack()
 
     def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):

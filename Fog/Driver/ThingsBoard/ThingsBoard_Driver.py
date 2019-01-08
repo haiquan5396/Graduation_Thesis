@@ -1,8 +1,12 @@
 import http.client
 import json
 import hashlib
+
+from kombu.utils.scheduling import priority_cycle
+
 from Fog.Driver.Driver_Base import Driver
 import time
+import urllib
 
 
 class ThingsBoard(Driver):
@@ -39,13 +43,24 @@ class ThingsBoard(Driver):
                 time.sleep(2)
                 continue
 
+    def get_customer_id(self):
+        result = self.connect()
+        conn = result[0]
+        headers = result[1]
+
+        conn.request("GET", "/api/customers?limit=11", headers=headers)
+        data = conn.getresponse().read()
+        json_data = json.loads(data.decode("utf-8"))
+        return json_data['data'][0]['id']['id']
+
     def get_list_device_on_customes(self):
         # print("get list")
         result = self.connect()
         conn = result[0]
         headers = result[1]
+        customer_id = self.get_customer_id()
 
-        conn.request("GET", "/api/customer/3f4fd570-4ed4-11e8-a082-9dc4b7fcfa12/devices?limit=111", headers=headers)
+        conn.request("GET", "/api/customer/" + customer_id + "/devices?limit=111", headers=headers)
         data = conn.getresponse().read()
         json_data = json.loads(data.decode("utf-8"))
         device_list = json_data['data']
@@ -96,13 +111,15 @@ class ThingsBoard(Driver):
         result = self.connect()
         conn = result[0]
         headers = result[1]
+        customer_id = self.get_customer_id()
 
-        dashboard_id = self.get_dashboard_id_on_customes_id("3f4fd570-4ed4-11e8-a082-9dc4b7fcfa12")
+        dashboard_id = self.get_dashboard_id_on_customes_id(customer_id)
         conn.request("GET", "/api/dashboard/" + dashboard_id, headers=headers)
         data = conn.getresponse().read()
         json_data = json.loads(data.decode("utf-8"))
+        key = list(json_data["configuration"]["widgets"].keys())[0]
         #print("JSON_DASHBOARD: {}".format(json_data))
-        return json_data["configuration"]["widgets"]["0c6413aa-8860-50e4-6eb8-935d21a1eacc"]["config"]["settings"]["gpioList"]
+        return json_data["configuration"]["widgets"][key]["config"]["settings"]["gpioList"]
 
     def get_states(self):
         # print("get states")
@@ -115,15 +132,18 @@ class ThingsBoard(Driver):
 
         for device in device_list:
             result_telemetry_keys = self.get_telemetry_keys(device["id"]["id"])
+            #print(result_telemetry_keys)
             keys_telemetry_list = result_telemetry_keys[0]
             telemetries = result_telemetry_keys[1]
 
             url = "/api/plugins/telemetry/DEVICE/" + device["id"]["id"] + "/values/timeseries?keys=" + telemetries
-
+            url = url.replace(" ", "%20")
+            #print("url: {}".format(url))
             conn.request("GET", url, headers=headers)
             response_data = conn.getresponse().read()
+            #print(response_data)
             response_json = json.loads(response_data.decode("utf-8"))
-            print(response_json)
+            #print(response_json)
 
             for telemetry in keys_telemetry_list:
                 item_state = response_json[telemetry][0]["value"]
@@ -135,6 +155,8 @@ class ThingsBoard(Driver):
                 data_type_detected = detect_value[0]
                 if metric_local_id in self.now_metric_domain:
                     mapped = self.mapping_data_value(self.now_metric_domain[metric_local_id], value_detected, data_type_detected)
+
+                    #print("self.now_metric_domain[metric_local_id]: {}, value_detected: {}, data_type_detected {}, mapped: {}".format(self.now_metric_domain[metric_local_id], value_detected, data_type_detected, mapped))
                     data_type_mapped = mapped[1]
                     value_mapped = mapped[0]
                     states.append({
@@ -150,7 +172,7 @@ class ThingsBoard(Driver):
     def check_configuration_changes(self):
         new_info = []
         device_list = self.get_list_device_on_customes()
-        print("list: {}".format(device_list))
+        #print("list: {}".format(device_list))
         result = self.connect()
         conn = result[0]
         headers = result[1]
@@ -161,7 +183,7 @@ class ThingsBoard(Driver):
             telemetries = result_telemetry_keys[1]
 
             url = "/api/plugins/telemetry/DEVICE/" + device["id"]["id"] + "/values/timeseries?keys=" + telemetries
-
+            url = url.replace(" ", "%20")
             conn.request("GET", url, headers=headers)
             response_data = conn.getresponse().read()
             response_json = json.loads(response_data.decode("utf-8"))
@@ -252,7 +274,6 @@ class ThingsBoard(Driver):
 
 if __name__ == '__main__':
     CONFIG_PATH = "config/thingsboard.ini"
-    MODE = 'PULL'
     TIME_PUSH = 5
     things_board = ThingsBoard(CONFIG_PATH, TIME_PUSH)
     things_board.run()

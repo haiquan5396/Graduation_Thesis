@@ -30,7 +30,7 @@ class Registry:
         self.time_check_platform_active = time_check_platform_active
         self.time_inactive_platform = time_inactive_platform
         self.mode = mode
-        self.dbcommunitor = DbCommunicator("Registry", "root", "root", "172.17.0.1")
+        self.dbcommunitor = DbCommunicator("Registry", "root", "root", "0.0.0.0")
 
         self.producer_connection = Connection(broker_cloud)
         self.consumer_connection = Connection(broker_cloud)
@@ -179,18 +179,18 @@ class Registry:
                     metric['SourceId'] = source['information']['SourceId']
                     db_update_metric.append(metric)
                     # self.dbcommunitor.update_metric(info_metric=metric)
-        start = time.time()
+        # start = time.time()
         self.dbcommunitor.update_info_sources(infos=db_new_source, new_source=True)
-        print("Write DB update_info_sources_new: {}".format(time.time() - start))
-        start = time.time()
+        # print("Write DB update_info_sources_new: {}".format(time.time() - start))
+        # start = time.time()
         self.dbcommunitor.update_info_sources(infos=db_update_source)
-        print("Write DB update_info_sources_active_and_inactive: {}".format(time.time() - start))
-        start = time.time()
+        # print("Write DB update_info_sources_active_and_inactive: {}".format(time.time() - start))
+        # start = time.time()
         self.dbcommunitor.update_metrics(info_metrics=db_new_metric, new_metric=True)
-        print("Write DB update_metrics_new: {}".format(time.time() - start))
-        start = time.time()
+        # print("Write DB update_metrics_new: {}".format(time.time() - start))
+        # start = time.time()
         self.dbcommunitor.update_metrics(info_metrics=db_update_metric)
-        print("Write DB update_metrics_active_and_inactive: {}".format(time.time()-start))
+        # print("Write DB update_metrics_active_and_inactive: {}".format(time.time()-start))
 
     def handle_configuration_changes(self, body, message):
         header = json.loads(body)['header']
@@ -207,13 +207,13 @@ class Registry:
                     self.update_changes_to_db(new_info, platform_id)
 
             else:
-                start = time.time()
+                # start = time.time()
                 self.logger.info('Platform have Id: {} changed sources configuration'.format(platform_id))
                 self.logger.debug("message body: {}".format(body))
                 new_info = body['new_info']
                 self.update_changes_to_db(new_info, platform_id)
-                end= time.time()
-                print("process time: {}".format(end - start))
+                # end= time.time()
+                # print("process time: {}".format(end - start))
 
             message = {
                 'header': {
@@ -399,7 +399,7 @@ if __name__ == '__main__':
     # MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
-        BROKER_CLOUD = 'localhost'  # rabbitmq
+        BROKER_CLOUD = '0.0.0.0'  # rabbitmq
         MODE = 'PULL'  # or PUSH or PULL
 
         dbconfig = {

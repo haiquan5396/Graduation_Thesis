@@ -16,8 +16,11 @@ class HomeAssistant(Driver):
     def get_states(self):
         # self.logger.debug('Get state of all things')
         url = 'http://' + self.host + ':' + self.port + '/api/states'
+        message = {
+            "header": {},
+            "body": {}
+        }
         response = self.connect_platform(url)
-
         states = []
 
         for metric in response:
