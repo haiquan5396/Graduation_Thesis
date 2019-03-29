@@ -2,19 +2,35 @@ import json
 import uuid
 import time
 import threading
-from mysql.connector.pooling import MySQLConnectionPool
+import copy
 from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
 from kombu.utils.compat import nested
 import sys
+from Cloud.Registry.db_communicator import DbCommunicator
+import logging
 
 
-class Registry():
-    def __init__(self, broker_cloud, mode, db_config, time_inactive_platform, time_update_conf, time_check_platform_active):
+class Registry:
+    def __init__(self, broker_cloud, mode, time_inactive_platform, time_update_conf, time_check_platform_active):
+        # ----->configure logging <-----
+        # if not os.path.exists('logging'):
+        #     os.makedirs('logging')
+        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
+        #                               backupCount=1)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
+                                      datefmt='%m-%d-%Y %H:%M:%S')
+        handler.setFormatter(formatter)
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.DEBUG)
+        # -----> end configure logging <-----
+
         self.time_update_conf = time_update_conf
         self.time_check_platform_active = time_check_platform_active
         self.time_inactive_platform = time_inactive_platform
-        self.cnxpool = MySQLConnectionPool(pool_name="mypool", pool_size=32, **db_config)
         self.mode = mode
+        self.dbcommunitor = DbCommunicator("Registry", "root", "root", "0.0.0.0")
 
         self.producer_connection = Connection(broker_cloud)
         self.consumer_connection = Connection(broker_cloud)
@@ -24,538 +40,358 @@ class Registry():
     def update_config_changes_by_platform_id(self, platform_id):
 
         message = {
-            'reply_to': 'driver.response.registry.api_check_configuration_changes',
-            'platform_id': platform_id
+            'header': {
+                'reply_to': 'driver.response.registry.api_check_configuration_changes',
+                'PlatformId': platform_id,
+                'mode': 'PULL'
+            }
         }
 
-        # send request to Driver
-        queue = Queue(name='driver.request.api_check_configuration_changes', exchange=self.exchange,
-                      routing_key='driver.request.api_check_configuration_changes', message_ttl=20)
-        routing_key = 'driver.request.api_check_configuration_changes'
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
-            producer.publish(
-                json.dumps(message),
-                exchange=self.exchange.name,
-                routing_key=routing_key,
-                declare=[queue],
-                retry=True
-            )
+        queue_name = 'driver.request.api_check_configuration_changes'
+        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
 
     def check_platform_active(self):
-        # print("Check active platform")
-        list_platforms = self.get_list_platforms("active")
-        for platform in list_platforms:
-            if (time.time() - platform['last_response']) > self.time_inactive_platform:
-                # print("Mark inactive platform: {}".format(platform['platform_id']))
-                self.mark_inactive(str(platform['platform_id']))
-                self.send_notification_to_collector()
+        while 1:
+            # queue_name = 'driver.request.api_check_platform_active'
+            list_platforms = self.dbcommunitor.get_platforms(platform_status='all')
+            # print("list_platform: {}".format(list_platforms))
+            for platform in list_platforms:
+                # self.logger.info("Send check active message to platform: {}".format(platform['PlatformId']))
+                # message = {
+                #     'header': {
+                #         'PlatformId': platform['PlatformId'],
+                #         'reply_to': 'driver.response.registry.api_check_platform_active'
+                #     }
+                # }
+                # self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+                if (time.time() - platform['LastResponse']) > self.time_inactive_platform and platform['PlatformStatus'] == 'active':
+                    self.logger.info(" Change status of platform {} - {} to inactive".format(platform['PlatformName'], platform['PlatformId']))
+                    platform['PlatformStatus'] = 'inactive'
+                    sources = self.dbcommunitor.get_sources(platform_id=platform['PlatformId'], get_source_id_of_metric=True)
+                    info_sources = []
+                    info_metrics = []
+                    for source in sources:
+                        source['information']['SourceStatus'] = 'inactive'
+                        for metric in source['metrics']:
+                            metric['MetricStatus'] = 'inactive'
+                            info_metrics.append(metric)
+                            # self.dbcommunitor.update_metric(info_metric=metric)
+                        info_sources.append(source['information'])
+                        # self.dbcommunitor.update_info_source(info=source['information'])
+                    self.dbcommunitor.update_metrics(info_metrics)
+                    self.dbcommunitor.update_info_sources(info_sources)
+                    self.dbcommunitor.update_platform(info_platform=platform)
 
-        threading.Timer(self.time_check_platform_active, self.check_platform_active).start()
+                    self.send_notification_to_collector()
+
+            time.sleep(self.time_check_platform_active)
 
     def update_changes_to_db(self, new_info, platform_id):
         # print("Update change of {} to database".format(platform_id))
-        now_info = self.get_things_by_platform_id(platform_id, "all", "all")
-        inactive_things = now_info[:]
-        new_things = new_info[:]
-        cnx_1 = self.get_connection_to_db()
-        cursor_1 = cnx_1.cursor()
-        for now_thing in now_info:
-            for new_thing in new_info:
-                if now_thing["thing_global_id"] == new_thing["thing_global_id"]:
+        now_info = self.dbcommunitor.get_sources(platform_id=platform_id, source_status="all", metric_status="all")
+        inactive_sources = copy.deepcopy(now_info)
 
-                    if (now_thing['thing_name'] != new_thing['thing_name'] \
-                                or now_thing['thing_type'] != new_thing['thing_type'] \
-                                or now_thing['location'] != new_thing['location']):
-                        cursor_1.execute(
-                            """UPDATE Thing SET thing_name=%s, thing_type=%s, location=%s, thing_status=%s  WHERE thing_global_id=%s""",
-                            (new_thing["thing_name"], new_thing["thing_type"], new_thing["location"], 'active',
-                             now_thing["thing_global_id"]))
-                    if now_thing['thing_status'] == 'inactive':
-                        cursor_1.execute("""UPDATE Thing SET thing_status=%s  WHERE thing_global_id=%s""",
-                                         ('active', now_thing["thing_global_id"]))
+        db_update_source = []
+        db_update_metric = []
+        db_new_source = []
+        db_new_metric = []
 
-                    inactive_items = now_thing["items"][:]
-                    new_items = new_thing['items'][:]
+        for new_source in new_info:
+            info_new_source = copy.deepcopy(new_source['information'])
+            if 'SourceId' in info_new_source:
+                for now_source in now_info:
+                    if now_source['information']["SourceId"] == info_new_source["SourceId"]:
+                        info_new_source['SourceStatus'] = 'active'
+                        # if info_now_source['SourceType'] == 'Thing':
+                        #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
+                        #             or info_now_source['Description'] != info_new_source['Description']
+                        #             or info_now_source['Label'] != info_new_source['Label']
+                        #             or info_now_source['ThingName'] != info_new_source['ThingName']):
+                        db_update_source.append(info_new_source)
+                        # self.dbcommunitor.update_info_source(info=info_new_source)
+                        # elif info_now_source['SourceType'] == 'Platform':
+                        #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
+                        #             or info_now_source['Description'] != info_new_source['Description']
+                        #             or info_now_source['Label'] != info_new_source['Label']
+                        #             or info_now_source['PlatformName'] != info_new_source['PlatformName']
+                        #             or info_now_source['PlatformType'] != info_new_source['PlatformType']):
+                        #
+                        #         self.dbcommunitor.update_info_source(info=info_new_source)
 
-                    for now_item in now_thing["items"]:
-                        for new_item in new_thing["items"]:
-                            if now_item["item_global_id"] == new_item["item_global_id"]:
-                                if (now_item["item_name"] != new_item["item_name"] or
-                                            now_item["item_type"] != new_item["item_type"] or
-                                            now_item['can_set_state'] != new_item['can_set_state']):
+                        inactive_metrics = copy.deepcopy(now_source['metrics'])
 
-                                    cursor_1.execute(
-                                        """UPDATE Item SET item_name=%s, item_type=%s, can_set_state=%s  WHERE item_global_id=%s""",
-                                        (new_item["item_name"], new_item["item_type"], new_item["can_set_state"],
-                                         now_item['item_global_id']))
-                                if now_item['item_status'] == 'inactive':
-                                    cursor_1.execute("""UPDATE Item SET item_status=%s  WHERE item_global_id=%s""",
-                                                     ('active', now_item['item_global_id']))
+                        for new_metric in new_source['metrics']:
+                            if 'MetricId' in new_metric:
+                                for now_metric in now_source['metrics']:
+                                    if now_metric["MetricId"] == new_metric["MetricId"]:
+                                        # if (now_metric["MetricName"] != new_metric["MetricName"]
+                                        #         or now_metric["MetricType"] != new_metric["MetricType"]
+                                        #         or now_metric['Unit'] != new_metric['Unit']
+                                        #         or now_metric['MetricDomain'] != new_metric['MetricDomain']):
+                                        # temp_metric = copy.deepcopy(new_metric)
+                                        new_metric['MetricStatus'] = 'active'
+                                        new_metric['SourceId'] = info_new_source['SourceId']
+                                        db_update_metric.append(new_metric)
+                                        # self.dbcommunitor.update_metric(info_metric=new_metric)
+                                        inactive_metrics.remove(now_metric)
+                                        break
+                            else:
+                                # New metric
+                                # temp_metric = copy.deepcopy(new_metric)
+                                new_metric['SourceId'] = info_new_source['SourceId']
+                                new_metric['MetricStatus'] = 'active'
+                                new_metric['MetricId'] = str(uuid.uuid4())
+                                db_new_metric.append(new_metric)
+                                # self.dbcommunitor.update_metric(info_metric=new_metric, new_metric=True)
 
-                                inactive_items.remove(now_item)
-                                new_items.remove(new_item)
-                                break
+                        if len(inactive_metrics) != 0:
+                            # Inactive metrics
+                            for metric in inactive_metrics:
+                                metric['SourceId'] = info_new_source['SourceId']
+                                metric['MetricStatus'] = 'inactive'
+                                db_update_metric.append(metric)
+                                # self.dbcommunitor.update_metric(info_metric=metric)
 
-                    if len(inactive_items) != 0:
-                        # Item inactive
-                        # print("Item inactive")
-                        for item_inactive in inactive_items:
-                            cursor_1.execute("""UPDATE Item SET item_status=%s  WHERE item_global_id=%s""",
-                                             ("inactive", item_inactive['item_global_id']))
-                    if len(new_items) != 0:
-                        # print("New Item ")
-                        for item in new_items:
-                            cursor_1.execute("""INSERT INTO Item VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                                             (item['item_global_id'], new_thing['thing_global_id'], item['item_name'],
-                                              item['item_type'], item['item_local_id'], item['can_set_state'],
-                                              "active"))
-                    inactive_things.remove(now_thing)
-                    new_things.remove(new_thing)
-                    break
-        if len(inactive_things) != 0:
-            # Thing inactive
-            # print("Thing inactive")
-            for thing_inactive in inactive_things:
-                cursor_1.execute("""UPDATE Thing SET thing_status=%s  WHERE thing_global_id=%s""",
-                                 ("inactive", thing_inactive['thing_global_id']))
-                for item_inactive in thing_inactive['items']:
-                    cursor_1.execute("""UPDATE Item SET item_status=%s  WHERE item_global_id=%s""",
-                                     ("inactive", item_inactive['item_global_id']))
+                        inactive_sources.remove(now_source)
+                        break
+            else:
+                # New Source
+                new_source_id = str(uuid.uuid4())
+                new_source['information']['SourceId'] = new_source_id
+                new_source['information']['SourceStatus'] = 'active'
+                db_new_source.append(new_source['information'])
+                # self.dbcommunitor.update_info_source(info=new_source['information'], new_source=True)
+                for metric in new_source['metrics']:
+                    metric['SourceId'] = new_source_id
+                    metric['MetricStatus'] = 'active'
+                    metric['MetricId'] = str(uuid.uuid4())
+                    db_new_metric.append(metric)
+                    # self.dbcommunitor.update_metric(info_metric=metric, new_metric=True)
 
-        if len(new_things) != 0:
-            # New things
-
-            # print("New Thing")
-            for thing in new_things:
-                cursor_1.execute("""INSERT INTO Thing VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                                 (thing['thing_global_id'], platform_id, thing['thing_name'],
-                                  thing['thing_type'], thing['thing_local_id'], thing['location'], "active"))
-                # print('Updated Things')
-                for item in thing['items']:
-                    # print("{}".format(item['item_global_id']))
-                    cursor_1.execute("""INSERT INTO Item VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                                     (item['item_global_id'], thing['thing_global_id'], item['item_name'],
-                                      item['item_type'], item['item_local_id'], item['can_set_state'], "active"))
-                    # print('Updated Items')
-        cnx_1.commit()
-        cursor_1.close()
-        cnx_1.close()
-
-    def get_things_by_platform_id(self, platform_id, thing_status, item_status):
-        # print("Get things in platform_id: {}".format(platform_id))
-        things_in_system = self.get_things(thing_status, item_status)
-        things_in_platform = []
-        for thing in things_in_system:
-            if thing['platform_id'] == platform_id:
-                things_in_platform.append(thing)
-        return things_in_platform
+        if len(inactive_sources) != 0:
+            # Inactive sources
+            for source in inactive_sources:
+                source['information']['SourceStatus'] = 'inactive'
+                db_update_source.append(source['information'])
+                # self.dbcommunitor.update_info_source(info=source['information'])
+                for metric in source['metrics']:
+                    metric['MetricStatus'] = 'inactive'
+                    metric['SourceId'] = source['information']['SourceId']
+                    db_update_metric.append(metric)
+                    # self.dbcommunitor.update_metric(info_metric=metric)
+        # start = time.time()
+        self.dbcommunitor.update_info_sources(infos=db_new_source, new_source=True)
+        # print("Write DB update_info_sources_new: {}".format(time.time() - start))
+        # start = time.time()
+        self.dbcommunitor.update_info_sources(infos=db_update_source)
+        # print("Write DB update_info_sources_active_and_inactive: {}".format(time.time() - start))
+        # start = time.time()
+        self.dbcommunitor.update_metrics(info_metrics=db_new_metric, new_metric=True)
+        # print("Write DB update_metrics_new: {}".format(time.time() - start))
+        # start = time.time()
+        self.dbcommunitor.update_metrics(info_metrics=db_update_metric)
+        # print("Write DB update_metrics_active_and_inactive: {}".format(time.time()-start))
 
     def handle_configuration_changes(self, body, message):
-        cnx_2 = self.get_connection_to_db()
-        cursor_2 = cnx_2.cursor()
-        body = json.loads(body)
-        platform_id = body['platform_id']
+        header = json.loads(body)['header']
+        body = json.loads(body)['body']
 
-        if body['have_change'] == False:
-            # print('Platform have Id: {} no changes'.format(platform_id))
-            cursor_2.execute("""SELECT platform_status FROM Platform WHERE platform_id=%s""",
-                             (str(platform_id),))
-            platform_status = cursor_2.fetchone()[0]
-            if platform_status == 'active':
-                pass
+        platform_id = header['PlatformId']
+
+        platform = self.dbcommunitor.get_platforms(platform_id=platform_id)[0]
+        if platform['PlatformStatus'] == 'active':
+            if body['is_change'] is False:
+                # print('Platform have Id: {} no changes'.format(platform_id))
+                if header['mode'] == "PULL":
+                    new_info = body['new_info']
+                    self.update_changes_to_db(new_info, platform_id)
+
             else:
+                # start = time.time()
+                self.logger.info('Platform have Id: {} changed sources configuration'.format(platform_id))
+                self.logger.debug("message body: {}".format(body))
                 new_info = body['new_info']
                 self.update_changes_to_db(new_info, platform_id)
-                self.send_notification_to_collector()
+                # end= time.time()
+                # print("process time: {}".format(end - start))
 
-        else:
-            print('Platform have Id: {} changed the configuration file'.format(platform_id))
-            new_info = body['new_info']
-            self.update_changes_to_db(new_info, platform_id)
+            message = {
+                'header': {
+                    'PlatformId': platform_id
+                },
+                'body': {
+                    'active_sources': self.dbcommunitor.get_sources(platform_id=platform_id, source_status='active', metric_status='active')
+                }
 
-        #Update last_response and status of platform
-        cursor_2.execute("""UPDATE Platform SET last_response=%s, platform_status=%s WHERE platform_id=%s""",
-                         (time.time(), 'active', platform_id))
-
-        cnx_2.commit()
-        cursor_2.close()
-        cnx_2.close()
-
-    def mark_inactive(self, platform_id):
-        print('Mark Thing and Item inactive')
-        cnx_1 = self.get_connection_to_db()
-        cursor_1 = cnx_1.cursor()
-        cursor_1.execute("""SELECT thing_global_id FROM Thing WHERE platform_id = %s""", (str(platform_id),))
-        list_thing_global_id = cursor_1.fetchall()
-        # print('List_thing {}'.format(list_thing_global_id))
-        for thing_global_id in list_thing_global_id:
-            # print(thing_global_id[0])
-            # thing_global_id[0] để lấy ra kết quả. Còn thing_global_id vẫn là list.
-            #  VD: ('d32d30b4-8917-4eb1-a273-17f7f440b240/sensor.humidity',)
-            cursor_1.execute("""UPDATE Item SET item_status=%s  WHERE thing_global_id=%s""",
-                             ("inactive", str(thing_global_id[0])))
-
-        cnx_1.commit()
-        cursor_1.execute("""UPDATE Thing SET thing_status=%s  WHERE platform_id=%s""", ("inactive", str(platform_id)))
-        cursor_1.execute("""UPDATE Platform SET platform_status=%s  WHERE platform_id=%s""",
-                         ("inactive", str(platform_id)))
-        cnx_1.commit()
-        cursor_1.close()
-        cnx_1.close()
-
-    def update_all_config_changes(self):
-        # print('Run Update All Configuration Changes')
-        list_platforms = self.get_list_platforms("all")
-
-        for platform in list_platforms:
-            self.update_config_changes_by_platform_id(platform['platform_id'])
-
-        threading.Timer(self.time_update_conf, self.update_all_config_changes).start()
-
-    def get_list_platforms(self, platform_status):
-        # print('Get list platforms')
-        list_platforms = []
-        cnx_1 = self.get_connection_to_db()
-        cursor_1 = cnx_1.cursor()
-
-        if platform_status == "active":
-            cursor_1.execute("""SELECT platform_id, platform_name, host, port, last_response, platform_status
-                                FROM Platform WHERE platform_status='active'""")
-        elif platform_status == "inactive":
-            cursor_1.execute("""SELECT platform_id, platform_name, host, port, last_response, platform_status
-                                FROM Platform WHERE platform_status='inactive'""")
-        elif platform_status == "all":
-            cursor_1.execute("""SELECT platform_id, platform_name, host, port, last_response, platform_status
-                                FROM Platform""")
-        else:
-            return list_platforms
-
-        rows = cursor_1.fetchall()
-        for row in rows:
-            list_platforms.append({
-                "platform_id": row[0],
-                "platform_name": row[1],
-                "host": row[2],
-                "port": row[3],
-                "last_response": row[4],
-                "platform_status": row[5]
-            })
-        # print(list_platforms)
-        cursor_1.close()
-        cnx_1.close()
-        return list_platforms
+            }
+            queue_name = 'driver.request.api_update_now_configuration'
+            self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+            # print("now config: {}".format(message))
 
     def api_get_list_platforms(self, body, message):
-        print("API get list platform with platform_status")
-        platform_status = json.loads(body)['platform_status']
-        reply_to = json.loads(body)['reply_to']
+        self.logger.info("API get list platform with platform_status")
+        header = json.loads(body)['header']
+        platform_status = header['PlatformStatus']
+        queue_name = header['reply_to']
+
         message_response = {
-            "list_platforms": self.get_list_platforms(platform_status)
+            'header':{},
+            'body': {}
         }
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
-            producer.publish(
-                json.dumps(message_response),
-                exchange=self.exchange.name,
-                routing_key=reply_to,
-                retry=True
-            )
+        message_response['body']['list_platforms'] = self.dbcommunitor.get_platforms(platform_status=platform_status)
+        self.publish_messages(message_response, self.producer_connection, queue_name, self.exchange)
 
     def api_add_platform(self, body, message):
-        body = json.loads(body)
-        host = body['host']
-        port = body['port']
-        platform_name = body['platform_name']
-        cnx_1 = self.get_connection_to_db()
-        cursor_1 = cnx_1.cursor()
-
-        if "platform_id" in body:
-            platform_id = body['platform_id']
-            print("Platform {} have id: {} come back to system".format(platform_name, platform_id))
-            cursor_1.execute("""UPDATE Platform SET platform_status=%s, last_response=%s  WHERE platform_id=%s""",
-                             ('active', time.time(), platform_id))
-        else:
-            platform_id = str(uuid.uuid4())
-            print('Add {} have address {}:{} to system '.format(platform_name, host, port))
-            print('Generate id for this platform : ', platform_id)
-            cursor_1.execute("""INSERT INTO Platform VALUES (%s,%s,%s,%s,%s,%s)""",
-                             (platform_id, platform_name, host, port, time.time(), "active"))
+        header = json.loads(body)['header']
+        body = json.loads(body)['body']
 
         message_response = {
-            'platform_id': platform_id,
-            'host': host,
-            'port': port,
-            'platform_name': platform_name
+            'header': {},
+            'body': {}
         }
+
+        platform_id = ""
+        if header['registered'] is True:
+            platform_id = header['PlatformId']
+            self.logger.info("Platform {} - {} come back to system".format(body['PlatformName'], platform_id))
+            info_platform = {
+                "PlatformId": platform_id,
+                "PlatformName": body['PlatformName'],
+                "PlatformType": body['PlatformType'],
+                "PlatformHost": body['PlatformHost'],
+                "PlatformPort": body['PlatformPort'],
+                "PlatformStatus": "active",
+                "LastResponse": time.time()
+            }
+            self.dbcommunitor.update_platform(info_platform)
+
+        else:
+            self.logger.info("Add new Platform to system")
+            platform_id = str(uuid.uuid4())
+            self.logger.info('Generate id for {} platform : {}'.format(body['PlatformName'], platform_id))
+
+            info_platform = {
+                "PlatformId": platform_id,
+                "PlatformName": body['PlatformName'],
+                "PlatformType": body['PlatformType'],
+                "PlatformHost": body['PlatformHost'],
+                "PlatformPort": body['PlatformPort'],
+                "PlatformStatus": "active",
+                "LastResponse": time.time()
+            }
+            self.dbcommunitor.update_platform(info_platform, new_platform=True)
+
+        sources = self.dbcommunitor.get_sources(platform_id=platform_id)
+        # print(sources)
+        message_response['header']['PlatformId'] = platform_id
+        message_response['header']['PlatformHost'] = body['PlatformHost']
+        message_response['header']['PlatformPort'] = body['PlatformPort']
+        message_response['body']['sources'] = sources
 
         # check connection and publish message
-        queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
-                               routing_key='registry.response.driver.api_add_platform', message_ttl=20)
+        # queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
+        #                        routing_key='registry.response.driver.api_add_platform', message_ttl=20)
         routing_key = 'registry.response.driver.api_add_platform'
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
-            producer.publish(
-                json.dumps(message_response),
-                exchange=self.exchange.name,
-                routing_key=routing_key,
-                declare=[queue_response],
-                retry=True
-            )
+        self.publish_messages(message_response, self.producer_connection, routing_key, self.exchange)
 
-        cnx_1.commit()
-        cursor_1.close()
-        cnx_1.close()
         self.send_notification_to_collector()
 
-    def get_things(self, thing_status, item_status):
-        cnx_1 = self.get_connection_to_db()
-        cursor_1 = cnx_1.cursor()
-        query_thing = ""
-        query_item = ""
-        if thing_status == 'active':
-            query_thing = """SELECT Thing.platform_id, Thing.thing_global_id, Thing.thing_name,
-                                    Thing.thing_type, Thing.location, Thing.thing_local_id, Thing.thing_status
-                              FROM  Thing
-                              WHERE Thing.thing_status = 'active'; """
-        elif thing_status == 'inactive':
-            query_thing = """SELECT Thing.platform_id, Thing.thing_global_id, Thing.thing_name,
-                                    Thing.thing_type, Thing.location, Thing.thing_local_id, Thing.thing_status
-                              FROM  Thing
-                              WHERE Thing.thing_status = 'inactive'; """
-        elif thing_status == 'all':
-            query_thing = """SELECT Thing.platform_id, Thing.thing_global_id, Thing.thing_name,
-                                    Thing.thing_type, Thing.location, Thing.thing_local_id, Thing.thing_status
-                              FROM  Thing;"""
+    def api_get_sources(self, body, message):
+        self.logger.info('API get sources')
+        message_received = json.loads(body)
 
-        if item_status == 'active':
-            query_item = """SELECT Item.thing_global_id, Item.item_global_id, Item.item_name,
-                                   Item.item_type, Item.can_set_state, Item.item_local_id, Item.item_status
-                              FROM Item 
-                              WHERE Item.item_status='active';"""
-        elif item_status == 'inactive':
-            query_item = """SELECT Item.thing_global_id, Item.item_global_id, Item.item_name,
-                                   Item.item_type, Item.can_set_state, Item.item_local_id, Item.item_status
-                              FROM Item 
-                              WHERE Item.item_status='inactive';"""
-        elif item_status == 'all':
-            query_item = """SELECT Item.thing_global_id, Item.item_global_id, Item.item_name,
-                                   Item.item_type, Item.can_set_state, Item.item_local_id, Item.item_status
-                              FROM Item;"""
-
-        cursor_1.execute(query_thing)
-        thing_rows = cursor_1.fetchall()
-
-        cursor_1.execute(query_item)
-        item_rows = cursor_1.fetchall()
-        cursor_1.close()
-        cnx_1.close()
-        things = []
-        for thing in thing_rows:
-            temp_thing = {
-                'platform_id': thing[0],
-                'thing_global_id': thing[1],
-                'thing_name': thing[2],
-                'thing_type': thing[3],
-                'location': thing[4],
-                'thing_local_id': thing[5],
-                'thing_status': thing[6],
-                'items': []
+        reply_to = message_received['header']['reply_to']
+        platform_id = message_received['body']['PlatformId']
+        source_id = message_received['body']['SourceId']
+        metric_status = message_received['body']['MetricStatus']
+        source_status = message_received['body']['SourceStatus']
+        # print(message_received)
+        message_response = {
+            'body': {
+                "sources": self.dbcommunitor.get_sources(platform_id=platform_id, source_id=source_id, source_status=source_status, metric_status=metric_status)
             }
-
-            for item in item_rows:
-                if item[0] == thing[1]:
-                    temp_item = {
-                        'item_global_id': item[1],
-                        'item_name': item[2],
-                        'item_type': item[3],
-                        'can_set_state': item[4],
-                        'item_local_id': item[5],
-                        'item_status': item[6]
-                    }
-                    temp_thing['items'].append(temp_item)
-            things.append(temp_thing)
-
-        return things
-
-    def get_thing_by_global_id(self, thing_global_id):
-        cnx_1 = self.get_connection_to_db()
-        cursor_1 = cnx_1.cursor()
-
-        cursor_1.execute("""SELECT Thing.platform_id, Thing.thing_global_id, Thing.thing_name,
-                                Thing.thing_type, Thing.location, Thing.thing_local_id, Thing.thing_status
-                          FROM  Thing
-                          WHERE Thing.thing_global_id=%s; """, (thing_global_id,))
-        thing_rows = cursor_1.fetchall()
-
-        cursor_1.execute("""SELECT Item.thing_global_id, Item.item_global_id, Item.item_name,
-                                   Item.item_type, Item.can_set_state, Item.item_local_id, Item.item_status
-                              FROM Item 
-                              WHERE Item.thing_global_id=%s;""", (thing_global_id,))
-
-        item_rows = cursor_1.fetchall()
-        cursor_1.close()
-        cnx_1.close()
-        things = []
-        for thing in thing_rows:
-            temp_thing = {
-                'platform_id': thing[0],
-                'thing_global_id': thing[1],
-                'thing_name': thing[2],
-                'thing_type': thing[3],
-                'location': thing[4],
-                'thing_local_id': thing[5],
-                'thing_status': thing[6],
-                'items': []
-            }
-
-            for item in item_rows:
-                if item[0] == thing[1]:
-                    temp_item = {
-                        'item_global_id': item[1],
-                        'item_name': item[2],
-                        'item_type': item[3],
-                        'can_set_state': item[4],
-                        'item_local_id': item[5],
-                        'item_status': item[6]
-                    }
-                    temp_thing['items'].append(temp_item)
-            things.append(temp_thing)
-
-        return things
-
-    def api_get_things(self, body, message):
-        print('API Get All Things')
-        reply_to = json.loads(body)['reply_to']
-        thing_status = json.loads(body)['thing_status']
-        item_status = json.loads(body)['item_status']
-        things = self.get_things(thing_status, item_status)
-        message_response = {
-            'things': things
         }
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
-            producer.publish(
-                json.dumps(message_response),
-                exchange=self.exchange.name,
-                routing_key=reply_to,
-                retry=True
-            )
 
-    def api_get_thing_by_global_id(self, body, message):
-        print('API Get Thing by thing_global_id')
-        reply_to = json.loads(body)['reply_to']
-        thing_global_id = json.loads(body)['thing_global_id']
+        self.publish_messages(message_response, self.producer_connection, reply_to, self.exchange)
 
-        things = self.get_thing_by_global_id(thing_global_id)
+    def handle_check_platform_active(self, body, message):
 
-        message_response = {
-            'things': things
-        }
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
-            producer.publish(
-                json.dumps(message_response),
-                exchange=self.exchange.name,
-                routing_key=reply_to,
-                retry=True
-            )
-
-    def api_get_things_by_platform_id(self, body, message):
-        print('Get Thing by platform_id')
-        reply_to = json.loads(body)['reply_to']
-        platform_id = json.loads(body)['platform_id']
-        thing_status = json.loads(body)['thing_status']
-        item_status = json.loads(body)['item_status']
-        things = self.get_things_by_platform_id(platform_id, thing_status, item_status)
-
-        message_response = {
-            'things': things
-        }
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
-            producer.publish(
-                json.dumps(message_response),
-                exchange=self.exchange.name,
-                routing_key=reply_to,
-                retry=True
-            )
-
-    def get_connection_to_db(self):
-        while True:
-            try:
-                # print("Get connection DB")
-                connection = self.cnxpool.get_connection()
-                return connection
-            except:
-                # print("Can't get connection DB")
-                pass
+        header = json.loads(body)['header']
+        body = json.loads(body)['body']
+        platform_id = header['PlatformId']
+        self.logger.debug("Handle message when platform {} response message check active".format(platform_id))
+        if body['active'] is True:
+            platform = self.dbcommunitor.get_platforms(platform_id=platform_id)[0]
+            if platform['PlatformStatus'] == 'inactive':
+                platform['PlatformStatus'] = 'active'
+                self.update_config_changes_by_platform_id(platform['PlatformId'])
+            platform['LastResponse'] = time.time()
+            self.dbcommunitor.update_platform(info_platform=platform)
 
     def send_notification_to_collector(self):
-        print('Send notification to Collector')
+        self.logger.info('Send notification to Collector')
         message = {
             'notification': 'Have Platform_id change'
         }
 
-        queue = Queue(name='collector.request.notification', exchange=self.exchange,
-                      routing_key='collector.request.notification', message_ttl=20)
-        routing_key = 'collector.request.notification'
-        self.producer_connection.ensure_connection()
-        with Producer(self.producer_connection) as producer:
+        queue_name = 'collector.request.notification'
+        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+
+    def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
+        self.logger.debug("message: {}".format(message))
+        if queue_routing_key is None:
+            queue_routing_key = queue_name
+        if routing_key is None:
+            routing_key = queue_name
+
+        # queue_publish = Queue(name=queue_name, exchange=exchange, routing_key=queue_routing_key, message_ttl=20)
+
+        conn.ensure_connection()
+        with Producer(conn) as producer:
             producer.publish(
                 json.dumps(message),
-                exchange=self.exchange.name,
+                exchange=exchange.name,
                 routing_key=routing_key,
-                declare=[queue],
                 retry=True
             )
 
     def run(self):
-        list_platforms = self.get_list_platforms("all")
-        for platform in list_platforms:
-            self.update_config_changes_by_platform_id(platform['platform_id'])
 
-
-        queue_get_things = Queue(name='registry.request.api_get_things', exchange=self.exchange,
-                                 routing_key='registry.request.api_get_things', message_ttl=20)
+        queue_get_sources = Queue(name='registry.request.api_get_sources', exchange=self.exchange,
+                                 routing_key='registry.request.api_get_sources', message_ttl=20)
         queue_get_list_platforms = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
                                          routing_key='registry.request.api_get_list_platforms', message_ttl=20)
         queue_add_platform = Queue(name='registry.request.api_add_platform', exchange=self.exchange,
                                    routing_key='registry.request.api_add_platform', message_ttl=20)
         queue_check_config = Queue(name='driver.response.registry.api_check_configuration_changes', exchange=self.exchange,
                                    routing_key='driver.response.registry.api_check_configuration_changes', message_ttl=20)
-        queue_get_thing_by_global_id = Queue(name='registry.request.api_get_thing_by_global_id', exchange=self.exchange,
-                                             routing_key='registry.request.api_get_thing_by_global_id', message_ttl=20)
-        queue_get_things_by_platform_id = Queue(name='registry.request.api_get_things_by_platform_id',
-                                                exchange=self.exchange,
-                                                routing_key='registry.request.api_get_things_by_platform_id', message_ttl=20)
+        queue_check_platform_active = Queue(name='driver.response.registry.api_check_platform_active', exchange=self.exchange,
+                                            routing_key='driver.response.registry.api_check_platform_active', message_ttl=20)
 
-        if self.mode == 'PULL':
-            self.update_all_config_changes()
-
-        self.check_platform_active()
+        thread_check_active = threading.Thread(target=self.check_platform_active)
+        thread_check_active.setDaemon(True)
+        thread_check_active.start()
 
         while 1:
             try:
                 self.consumer_connection.ensure_connection(max_retries=1)
-                with nested(Consumer(self.consumer_connection, queues=queue_get_things_by_platform_id,
-                                     callbacks=[self.api_get_things_by_platform_id], no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_thing_by_global_id,
-                                     callbacks=[self.api_get_thing_by_global_id], no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_add_platform, callbacks=[self.api_add_platform],
+                with nested(Consumer(self.consumer_connection, queues=queue_add_platform, callbacks=[self.api_add_platform],
                                      no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_things, callbacks=[self.api_get_things],
+                            Consumer(self.consumer_connection, queues=queue_get_sources, callbacks=[self.api_get_sources],
                                      no_ack=True),
                             Consumer(self.consumer_connection, queues=queue_get_list_platforms,
                                      callbacks=[self.api_get_list_platforms], no_ack=True),
                             Consumer(self.consumer_connection, queues=queue_check_config,
-                                     callbacks=[self.handle_configuration_changes], no_ack=True)):
+                                     callbacks=[self.handle_configuration_changes], no_ack=True),
+                            Consumer(self.consumer_connection, queues=queue_check_platform_active,
+                                     callbacks=[self.handle_check_platform_active], no_ack=True)
+                            ):
                     while True:
                         self.consumer_connection.drain_events()
             except (ConnectionRefusedError, exceptions.OperationalError):
-                print('Connection lost')
+                self.logger.error('Connection to Broker Cloud is lost')
             except self.consumer_connection.connection_errors:
-                print('Connection error')
+                self.logger.error('Connection to Broker Cloud is error')
 
 
 if __name__ == '__main__':
@@ -563,26 +399,26 @@ if __name__ == '__main__':
     # MODE_CODE = 'Deploy'
 
     if MODE_CODE == 'Develop':
-        BROKER_CLOUD = 'localhost'  # rabbitmq
+        BROKER_CLOUD = '0.0.0.0'  # rabbitmq
         MODE = 'PULL'  # or PUSH or PULL
 
         dbconfig = {
-            "database": "Registry_DB",
+            "database": "Registry",
             "user": "root",
             "host": '0.0.0.0',
             "passwd": "root",
             "autocommit": "True"
         }
 
-        TIME_INACTIVE_PLATFORM = 60     # Time when platform is marked inactive
-        TIME_UPDATE_CONF = 2            # Time when registry send request update conf to Driver
-        TIME_CHECK_PLATFORM_ACTIVE = 2  # Time when check active_platform in system
+        TIME_INACTIVE_PLATFORM = 120     # Time when platform is marked inactive
+        TIME_UPDATE_CONF = 5            # Time when registry send request update conf to Driver
+        TIME_CHECK_PLATFORM_ACTIVE = 15  # Time when check active_platform in system
     else:
         BROKER_CLOUD = sys.argv[1]  #rabbitmq
         MODE = sys.argv[2] # or PUSH or PULL
 
         dbconfig = {
-          "database": "Registry_DB",
+          "database": "Registry",
           "user":     "root",
           "host":     sys.argv[3],
           "passwd":   "root",
@@ -593,5 +429,5 @@ if __name__ == '__main__':
         TIME_UPDATE_CONF = int(sys.argv[5])
         TIME_CHECK_PLATFORM_ACTIVE = int(sys.argv[6])
 
-    registry = Registry(BROKER_CLOUD, MODE, dbconfig, TIME_INACTIVE_PLATFORM, TIME_UPDATE_CONF, TIME_CHECK_PLATFORM_ACTIVE)
+    registry = Registry(BROKER_CLOUD, MODE, TIME_INACTIVE_PLATFORM, TIME_UPDATE_CONF, TIME_CHECK_PLATFORM_ACTIVE)
     registry.run()

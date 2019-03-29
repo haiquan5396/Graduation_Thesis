@@ -18,7 +18,7 @@ import numpy as np
 
 import hashlib
 import time
-from Fog.Driver.Driver_Base import Driver
+from Driver_Base import Driver
 # from Driver_Base import Driver
 
 
@@ -39,33 +39,6 @@ class OpenHAB(Driver):
                 self.logger.error("Error connect to Platform")
                 time.sleep(2)
 
-    def get_item_from_openhab(self, item_name):
-        while True:
-            try:
-                item = self.openhab.get_item(item_name)
-                return item
-            except:
-                self.logger.error("Error connect to Platform")
-                time.sleep(2)
-
-    def get_items_from_openhab(self):
-        while True:
-            try:
-                items = self.openhab.fetch_all_items()
-                return items
-            except:
-                self.logger.error("Error connect to Platform")
-                time.sleep(2)
-
-    def get_item_raw_from_openhab(self, item_to_thing):
-        while True:
-            try:
-                item = self.openhab.get_item_raw(item_to_thing)
-                return item
-            except:
-                self.logger.error("Error connect to Platform")
-                time.sleep(2)
-
     def get_states(self):
         things = self.get_things_from_openhab()
         # print("STATES: {}".format(things))
@@ -73,7 +46,7 @@ class OpenHAB(Driver):
         item_of_thing_list = []
 
         # Get all items in openHAB
-        items = self.get_items_from_openhab()  # dict of openHAB items
+        items = self.openhab.fetch_all_items()  # dict of openHAB items
         # items = items.items()                   # convert dict into list
         # items = np.asarray(items)
 
@@ -97,7 +70,7 @@ class OpenHAB(Driver):
                 item_of_thing_list.append(item_name)  # Get all item of things.
                 item_local_id = item_name
                 item_url = "http://" + self.host + ":" + self.port + "/rest/items?recursive=false"
-                item = self.get_item_from_openhab(item_name)
+                item = self.openhab.get_item(item_name)
                 # item_state = item.state
                 # if item_type == "Number":
                 #     item_state = int(item['state'])
@@ -138,7 +111,7 @@ class OpenHAB(Driver):
 
         # Those items above be converted to things
         for item_to_thing in remain_item_list:
-            item = self.get_item_raw_from_openhab(item_to_thing)
+            item = self.openhab.get_item_raw(item_to_thing)
             # print("STATES ITEM: {}".format(item))
 
             item_type = item['type']
@@ -191,7 +164,7 @@ class OpenHAB(Driver):
 
 
         # Get all items in openHAB
-        items = self.get_items_from_openhab()  # dict of openHAB items
+        items = self.openhab.fetch_all_items()  # dict of openHAB items
         #items = items.items()  # convert dict into list
         #items = np.asarray(items)
         #print (items)
@@ -215,7 +188,7 @@ class OpenHAB(Driver):
                 # item_global_id = self.platform_id + "-" + thing_local_id + "-" + item_local_id
                 # item_url = "http://" + self.host + ":" + self.port + "/rest/items?recursive=false"
                 item_state = item.state
-                item = self.get_item_from_openhab(item_name)
+                item = self.openhab.get_item(item_name)
                 value = self.detect_data_type(item_state)[1]
                 sentence = item_name + " " + item_type
                 metric_domain = self.detect_metric_domain(sentence, value)
@@ -253,8 +226,7 @@ class OpenHAB(Driver):
 
         # Those items above be converted to things
         for item_to_thing in remain_item_list:
-            item = self.get_item_raw_from_openhab(item_to_thing)
-            #print("Item: {}".format(item))
+            item = self.openhab.get_item_raw(item_to_thing)
             item_type = item['type']
             item_name = item['name']
             thing_name = item_name

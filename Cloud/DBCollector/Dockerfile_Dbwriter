@@ -5,13 +5,15 @@ MAINTAINER HaiQuan "haiquan5396@gmail.com"
 ENV BROKER_CLOUD localhost
 ENV HOST_INFLUXDB locahost
 
-COPY ./requirements.txt /app/requirements.txt
+COPY Cloud/DBCollector/requirements.txt /app/requirements.txt
+
+COPY Performance_Monitoring/message_monitor.py /app/Performance_Monitoring/message_monitor.py
 
 WORKDIR /app
 
 RUN pip3 install -r requirements.txt
 
-COPY ./Dbwriter.py /app
+COPY Cloud/DBCollector/Dbwriter.py /app
 
 CMD python3 Dbwriter.py ${BROKER_CLOUD} ${HOST_INFLUXDB}
 
