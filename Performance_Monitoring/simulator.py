@@ -6,7 +6,7 @@ import time
 
 broker_fog = '0.0.0.0'
 clientMQTT_1 = mqtt.Client()
-clientMQTT_1.connect(broker_fog, 1884)
+clientMQTT_1.connect(broker_fog, 1883)
 
 # clientMQTT_2 = mqtt.Client()
 # clientMQTT_2.connect(broker_fog, 1885)

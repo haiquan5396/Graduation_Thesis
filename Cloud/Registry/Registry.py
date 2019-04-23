@@ -3,39 +3,24 @@ import uuid
 import time
 import threading
 import copy
-from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
-from kombu.utils.compat import nested
 import sys
 from Cloud.Registry.db_communicator import DbCommunicator
-import logging
+import Logging.config_logging as logging
+from Communicator.broker_cloud import BrokerCloudClient
+
+_LOGGER = logging.get_logger(__name__)
 
 
 class Registry:
     def __init__(self, broker_cloud, mode, time_inactive_platform, time_update_conf, time_check_platform_active):
-        # ----->configure logging <-----
-        # if not os.path.exists('logging'):
-        #     os.makedirs('logging')
-        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
-        #                               backupCount=1)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
-                                      datefmt='%m-%d-%Y %H:%M:%S')
-        handler.setFormatter(formatter)
-        self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.DEBUG)
-        # -----> end configure logging <-----
-
         self.time_update_conf = time_update_conf
         self.time_check_platform_active = time_check_platform_active
         self.time_inactive_platform = time_inactive_platform
         self.mode = mode
         self.dbcommunitor = DbCommunicator("Registry", "root", "root", "0.0.0.0")
 
-        self.producer_connection = Connection(broker_cloud)
-        self.consumer_connection = Connection(broker_cloud)
-
-        self.exchange = Exchange("IoT", type="direct")
+        self.client_producer_cloud = BrokerCloudClient(broker_cloud, 'IoT', 'direct')
+        self.client_consumer_cloud = BrokerCloudClient(broker_cloud, 'IoT', 'direct')
 
     def update_config_changes_by_platform_id(self, platform_id):
 
@@ -48,24 +33,14 @@ class Registry:
         }
 
         queue_name = 'driver.request.api_check_configuration_changes'
-        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+        self.client_producer_cloud.publish_messages(message, queue_name)
 
     def check_platform_active(self):
         while 1:
-            # queue_name = 'driver.request.api_check_platform_active'
             list_platforms = self.dbcommunitor.get_platforms(platform_status='all')
-            # print("list_platform: {}".format(list_platforms))
             for platform in list_platforms:
-                # self.logger.info("Send check active message to platform: {}".format(platform['PlatformId']))
-                # message = {
-                #     'header': {
-                #         'PlatformId': platform['PlatformId'],
-                #         'reply_to': 'driver.response.registry.api_check_platform_active'
-                #     }
-                # }
-                # self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
                 if (time.time() - platform['LastResponse']) > self.time_inactive_platform and platform['PlatformStatus'] == 'active':
-                    self.logger.info(" Change status of platform {} - {} to inactive".format(platform['PlatformName'], platform['PlatformId']))
+                    _LOGGER.info(" Change status of platform {} - {} to inactive".format(platform['PlatformName'], platform['PlatformId']))
                     platform['PlatformStatus'] = 'inactive'
                     sources = self.dbcommunitor.get_sources(platform_id=platform['PlatformId'], get_source_id_of_metric=True)
                     info_sources = []
@@ -75,9 +50,7 @@ class Registry:
                         for metric in source['metrics']:
                             metric['MetricStatus'] = 'inactive'
                             info_metrics.append(metric)
-                            # self.dbcommunitor.update_metric(info_metric=metric)
                         info_sources.append(source['information'])
-                        # self.dbcommunitor.update_info_source(info=source['information'])
                     self.dbcommunitor.update_metrics(info_metrics)
                     self.dbcommunitor.update_info_sources(info_sources)
                     self.dbcommunitor.update_platform(info_platform=platform)
@@ -102,47 +75,24 @@ class Registry:
                 for now_source in now_info:
                     if now_source['information']["SourceId"] == info_new_source["SourceId"]:
                         info_new_source['SourceStatus'] = 'active'
-                        # if info_now_source['SourceType'] == 'Thing':
-                        #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
-                        #             or info_now_source['Description'] != info_new_source['Description']
-                        #             or info_now_source['Label'] != info_new_source['Label']
-                        #             or info_now_source['ThingName'] != info_new_source['ThingName']):
                         db_update_source.append(info_new_source)
-                        # self.dbcommunitor.update_info_source(info=info_new_source)
-                        # elif info_now_source['SourceType'] == 'Platform':
-                        #     if (info_now_source['EndPoint'] != info_new_source['EndPoint']
-                        #             or info_now_source['Description'] != info_new_source['Description']
-                        #             or info_now_source['Label'] != info_new_source['Label']
-                        #             or info_now_source['PlatformName'] != info_new_source['PlatformName']
-                        #             or info_now_source['PlatformType'] != info_new_source['PlatformType']):
-                        #
-                        #         self.dbcommunitor.update_info_source(info=info_new_source)
 
                         inactive_metrics = copy.deepcopy(now_source['metrics'])
-
                         for new_metric in new_source['metrics']:
                             if 'MetricId' in new_metric:
                                 for now_metric in now_source['metrics']:
                                     if now_metric["MetricId"] == new_metric["MetricId"]:
-                                        # if (now_metric["MetricName"] != new_metric["MetricName"]
-                                        #         or now_metric["MetricType"] != new_metric["MetricType"]
-                                        #         or now_metric['Unit'] != new_metric['Unit']
-                                        #         or now_metric['MetricDomain'] != new_metric['MetricDomain']):
-                                        # temp_metric = copy.deepcopy(new_metric)
                                         new_metric['MetricStatus'] = 'active'
                                         new_metric['SourceId'] = info_new_source['SourceId']
                                         db_update_metric.append(new_metric)
-                                        # self.dbcommunitor.update_metric(info_metric=new_metric)
                                         inactive_metrics.remove(now_metric)
                                         break
                             else:
                                 # New metric
-                                # temp_metric = copy.deepcopy(new_metric)
                                 new_metric['SourceId'] = info_new_source['SourceId']
                                 new_metric['MetricStatus'] = 'active'
                                 new_metric['MetricId'] = str(uuid.uuid4())
                                 db_new_metric.append(new_metric)
-                                # self.dbcommunitor.update_metric(info_metric=new_metric, new_metric=True)
 
                         if len(inactive_metrics) != 0:
                             # Inactive metrics
@@ -150,7 +100,6 @@ class Registry:
                                 metric['SourceId'] = info_new_source['SourceId']
                                 metric['MetricStatus'] = 'inactive'
                                 db_update_metric.append(metric)
-                                # self.dbcommunitor.update_metric(info_metric=metric)
 
                         inactive_sources.remove(now_source)
                         break
@@ -160,25 +109,21 @@ class Registry:
                 new_source['information']['SourceId'] = new_source_id
                 new_source['information']['SourceStatus'] = 'active'
                 db_new_source.append(new_source['information'])
-                # self.dbcommunitor.update_info_source(info=new_source['information'], new_source=True)
                 for metric in new_source['metrics']:
                     metric['SourceId'] = new_source_id
                     metric['MetricStatus'] = 'active'
                     metric['MetricId'] = str(uuid.uuid4())
                     db_new_metric.append(metric)
-                    # self.dbcommunitor.update_metric(info_metric=metric, new_metric=True)
 
         if len(inactive_sources) != 0:
             # Inactive sources
             for source in inactive_sources:
                 source['information']['SourceStatus'] = 'inactive'
                 db_update_source.append(source['information'])
-                # self.dbcommunitor.update_info_source(info=source['information'])
                 for metric in source['metrics']:
                     metric['MetricStatus'] = 'inactive'
                     metric['SourceId'] = source['information']['SourceId']
                     db_update_metric.append(metric)
-                    # self.dbcommunitor.update_metric(info_metric=metric)
         # start = time.time()
         self.dbcommunitor.update_info_sources(infos=db_new_source, new_source=True)
         # print("Write DB update_info_sources_new: {}".format(time.time() - start))
@@ -208,14 +153,14 @@ class Registry:
 
             else:
                 # start = time.time()
-                self.logger.info('Platform have Id: {} changed sources configuration'.format(platform_id))
-                self.logger.debug("message body: {}".format(body))
+                _LOGGER.info('Platform have Id: {} changed sources configuration'.format(platform_id))
+                _LOGGER.debug("Sources configuration received from Forwarder: {}".format(body))
                 new_info = body['new_info']
                 self.update_changes_to_db(new_info, platform_id)
                 # end= time.time()
                 # print("process time: {}".format(end - start))
 
-            message = {
+            message_config = {
                 'header': {
                     'PlatformId': platform_id
                 },
@@ -225,21 +170,20 @@ class Registry:
 
             }
             queue_name = 'driver.request.api_update_now_configuration'
-            self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
-            # print("now config: {}".format(message))
+            self.client_producer_cloud.publish_messages(message_config, queue_name)
 
     def api_get_list_platforms(self, body, message):
-        self.logger.info("API get list platform with platform_status")
+        _LOGGER.info("API get list platform with platform_status")
         header = json.loads(body)['header']
         platform_status = header['PlatformStatus']
         queue_name = header['reply_to']
 
         message_response = {
-            'header':{},
+            'header': {},
             'body': {}
         }
         message_response['body']['list_platforms'] = self.dbcommunitor.get_platforms(platform_status=platform_status)
-        self.publish_messages(message_response, self.producer_connection, queue_name, self.exchange)
+        self.client_producer_cloud.publish_messages(message_response, queue_name)
 
     def api_add_platform(self, body, message):
         header = json.loads(body)['header']
@@ -253,7 +197,7 @@ class Registry:
         platform_id = ""
         if header['registered'] is True:
             platform_id = header['PlatformId']
-            self.logger.info("Platform {} - {} come back to system".format(body['PlatformName'], platform_id))
+            _LOGGER.info("Platform {} - {} come back to system".format(body['PlatformName'], platform_id))
             info_platform = {
                 "PlatformId": platform_id,
                 "PlatformName": body['PlatformName'],
@@ -266,9 +210,9 @@ class Registry:
             self.dbcommunitor.update_platform(info_platform)
 
         else:
-            self.logger.info("Add new Platform to system")
+            _LOGGER.info("Add new Platform to system")
             platform_id = str(uuid.uuid4())
-            self.logger.info('Generate id for {} platform : {}'.format(body['PlatformName'], platform_id))
+            _LOGGER.info('Generate id for {} platform : {}'.format(body['PlatformName'], platform_id))
 
             info_platform = {
                 "PlatformId": platform_id,
@@ -288,16 +232,12 @@ class Registry:
         message_response['header']['PlatformPort'] = body['PlatformPort']
         message_response['body']['sources'] = sources
 
-        # check connection and publish message
-        # queue_response = Queue(name='registry.response.driver.api_add_platform', exchange=self.exchange,
-        #                        routing_key='registry.response.driver.api_add_platform', message_ttl=20)
-        routing_key = 'registry.response.driver.api_add_platform'
-        self.publish_messages(message_response, self.producer_connection, routing_key, self.exchange)
-
+        queue_name = 'registry.response.driver.api_add_platform'
+        self.client_producer_cloud.publish_messages(message_response, queue_name)
         self.send_notification_to_collector()
 
     def api_get_sources(self, body, message):
-        self.logger.info('API get sources')
+        _LOGGER.info('API get sources')
         message_received = json.loads(body)
 
         reply_to = message_received['header']['reply_to']
@@ -312,14 +252,14 @@ class Registry:
             }
         }
 
-        self.publish_messages(message_response, self.producer_connection, reply_to, self.exchange)
+        self.client_producer_cloud.publish_messages(message_response, reply_to)
 
     def handle_check_platform_active(self, body, message):
 
         header = json.loads(body)['header']
         body = json.loads(body)['body']
         platform_id = header['PlatformId']
-        self.logger.debug("Handle message when platform {} response message check active".format(platform_id))
+        _LOGGER.debug("Handle message when platform {} response message check active".format(platform_id))
         if body['active'] is True:
             platform = self.dbcommunitor.get_platforms(platform_id=platform_id)[0]
             if platform['PlatformStatus'] == 'inactive':
@@ -329,69 +269,50 @@ class Registry:
             self.dbcommunitor.update_platform(info_platform=platform)
 
     def send_notification_to_collector(self):
-        self.logger.info('Send notification to Collector')
+        _LOGGER.info('Send notification to Collector')
         message = {
             'notification': 'Have Platform_id change'
         }
 
         queue_name = 'collector.request.notification'
-        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
-
-    def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
-        self.logger.debug("message: {}".format(message))
-        if queue_routing_key is None:
-            queue_routing_key = queue_name
-        if routing_key is None:
-            routing_key = queue_name
-
-        # queue_publish = Queue(name=queue_name, exchange=exchange, routing_key=queue_routing_key, message_ttl=20)
-
-        conn.ensure_connection()
-        with Producer(conn) as producer:
-            producer.publish(
-                json.dumps(message),
-                exchange=exchange.name,
-                routing_key=routing_key,
-                retry=True
-            )
+        self.client_producer_cloud.publish_messages(message, queue_name)
 
     def run(self):
 
-        queue_get_sources = Queue(name='registry.request.api_get_sources', exchange=self.exchange,
-                                 routing_key='registry.request.api_get_sources', message_ttl=20)
-        queue_get_list_platforms = Queue(name='registry.request.api_get_list_platforms', exchange=self.exchange,
-                                         routing_key='registry.request.api_get_list_platforms', message_ttl=20)
-        queue_add_platform = Queue(name='registry.request.api_add_platform', exchange=self.exchange,
-                                   routing_key='registry.request.api_add_platform', message_ttl=20)
-        queue_check_config = Queue(name='driver.response.registry.api_check_configuration_changes', exchange=self.exchange,
-                                   routing_key='driver.response.registry.api_check_configuration_changes', message_ttl=20)
-        queue_check_platform_active = Queue(name='driver.response.registry.api_check_platform_active', exchange=self.exchange,
-                                            routing_key='driver.response.registry.api_check_platform_active', message_ttl=20)
+        info_consumers = [
+            {
+                'queue_name': 'registry.request.api_get_sources',
+                'routing_key': 'registry.request.api_get_sources',
+                'callback': self.api_get_sources
+            },
+            {
+                'queue_name': 'registry.request.api_get_list_platforms',
+                'routing_key': 'registry.request.api_get_list_platforms',
+                'callback': self.api_get_list_platforms
+
+            },
+            {
+                'queue_name': 'registry.request.api_add_platform',
+                'routing_key': 'registry.request.api_add_platform',
+                'callback': self.api_add_platform
+            },
+            {
+                'queue_name': 'driver.response.registry.api_check_configuration_changes',
+                'routing_key': 'driver.response.registry.api_check_configuration_changes',
+                'callback': self.handle_configuration_changes
+            },
+            {
+                'queue_name': 'driver.response.registry.api_check_platform_active',
+                'routing_key': 'driver.response.registry.api_check_platform_active',
+                'callback': self.handle_check_platform_active
+            }
+        ]
 
         thread_check_active = threading.Thread(target=self.check_platform_active)
         thread_check_active.setDaemon(True)
         thread_check_active.start()
 
-        while 1:
-            try:
-                self.consumer_connection.ensure_connection(max_retries=1)
-                with nested(Consumer(self.consumer_connection, queues=queue_add_platform, callbacks=[self.api_add_platform],
-                                     no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_sources, callbacks=[self.api_get_sources],
-                                     no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_list_platforms,
-                                     callbacks=[self.api_get_list_platforms], no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_check_config,
-                                     callbacks=[self.handle_configuration_changes], no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_check_platform_active,
-                                     callbacks=[self.handle_check_platform_active], no_ack=True)
-                            ):
-                    while True:
-                        self.consumer_connection.drain_events()
-            except (ConnectionRefusedError, exceptions.OperationalError):
-                self.logger.error('Connection to Broker Cloud is lost')
-            except self.consumer_connection.connection_errors:
-                self.logger.error('Connection to Broker Cloud is error')
+        self.client_consumer_cloud.subscribe_message(info_consumers)
 
 
 if __name__ == '__main__':
@@ -412,7 +333,7 @@ if __name__ == '__main__':
 
         TIME_INACTIVE_PLATFORM = 120     # Time when platform is marked inactive
         TIME_UPDATE_CONF = 5            # Time when registry send request update conf to Driver
-        TIME_CHECK_PLATFORM_ACTIVE = 15  # Time when check active_platform in system
+        TIME_CHECK_PLATFORM_ACTIVE = 60  # Time when check active_platform in system
     else:
         BROKER_CLOUD = sys.argv[1]  #rabbitmq
         MODE = sys.argv[2] # or PUSH or PULL

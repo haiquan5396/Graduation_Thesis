@@ -1,6 +1,7 @@
 from mysql.connector.pooling import MySQLConnectionPool
 import time
 
+
 class DbCommunicator:
     def __init__(self, db_name, db_user, password, host):
         db_config = {

@@ -1,42 +1,25 @@
 import json
-import threading
-from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue, uuid
-from kombu.utils.compat import nested
 import sys
-import logging
 from datetime import datetime
-import time
+from Communicator.broker_cloud import BrokerCloudClient
+import Logging.config_logging as logging
 
-class Collector():
+_LOGGER = logging.get_logger(__name__)
+
+
+class Collector:
     def __init__(self, broker_cloud, time_collect):
-        # ----->configure logging <-----
-        # if not os.path.exists('logging'):
-        #     os.makedirs('logging')
-        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
-        #                               backupCount=1)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
-                                      datefmt='%m-%d-%Y %H:%M:%S')
-        handler.setFormatter(formatter)
-        self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.DEBUG)
-        # -----> end configure logging <-----
-
         self.time_collect = time_collect
-        self.producer_connection = Connection(broker_cloud)
-        self.consumer_connection = Connection(broker_cloud)
-        self.exchange = Exchange("IoT", type="direct")
         self.list_platform_id = []
+        self.client_producer_cloud = BrokerCloudClient(broker_cloud, 'IoT', 'direct')
+        self.client_consumer_cloud = BrokerCloudClient(broker_cloud, 'IoT', 'direct')
 
     def collect(self):
-        # print("Collect the states of the devices")
         for platform_id in self.list_platform_id:
             self.collect_by_platform_id(platform_id)
-        # threading.Timer(self.time_collect, self.collect).start()
 
     def collect_by_platform_id(self, platform_id):
-        self.logger.info('Collect data from platform_id: {}'.format(str(platform_id)))
+        _LOGGER.info('Collect data from platform_id: {}'.format(str(platform_id)))
         message_request = {
             'header': {
                 'reply_to': 'driver.response.collector.api_get_states',
@@ -46,13 +29,12 @@ class Collector():
         }
 
         queue_name = 'driver.request.api_get_states'
-        self.publish_messages(message_request, self.producer_connection, queue_name, self.exchange)
+        self.client_producer_cloud.publish_messages(message_request, queue_name)
 
     def handle_collect_by_platform_id(self, body, message):
-        #start = time.time()
-        self.logger.info('Received state from platform_id: {}'.format(json.loads(body)['header']['PlatformId']))
+        _LOGGER.info('Received state from platform_id: {}'.format(json.loads(body)['header']['PlatformId']))
         states = json.loads(body)['body']['states']
-        self.logger.debug('State : {}'.format(states))
+        _LOGGER.debug('State : {}'.format(states))
         points = []
         for state in states:
             points.append({
@@ -69,12 +51,10 @@ class Collector():
             }
         }
         queue_name = 'dbwriter.request.api_write_db'
-        self.publish_messages(data_points, self.producer_connection, queue_name, self.exchange)
-        #self.logger.warning("TIME: {}".format(time.time() - start))
-        message.ack()
+        self.client_producer_cloud.publish_messages(data_points, queue_name)
 
     def get_list_platforms(self):
-        self.logger.info("Get list platforms from Registry")
+        _LOGGER.info("Get list platforms from Registry")
         message = {
             "header": {
                 'reply_to': 'registry.response.collector.api_get_list_platforms',
@@ -83,7 +63,7 @@ class Collector():
         }
 
         queue_name = 'registry.request.api_get_list_platforms'
-        self.publish_messages(message, self.producer_connection, queue_name, self.exchange)
+        self.client_producer_cloud.publish_messages(message, queue_name)
 
     def handle_get_list(self, body, message):
         list_platforms = json.loads(body)['body']['list_platforms']
@@ -93,61 +73,38 @@ class Collector():
 
         self.list_platform_id = temp
         self.collect()
-        self.logger.info('Updated list of platform_id: {}'.format(self.list_platform_id))
+        _LOGGER.info('Updated list of platform_id: {}'.format(self.list_platform_id))
 
     def handle_notification(self, body, message):
-        self.logger.info('Have Notification')
+        _LOGGER.info('Have Notification')
         if json.loads(body)['notification'] == 'Have Platform_id change':
             self.get_list_platforms()
 
-    def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
-        self.logger.debug("Message publish to queue {}: {}".format(queue_name, message))
-        if queue_routing_key is None:
-            queue_routing_key = queue_name
-        if routing_key is None:
-            routing_key = queue_name
-
-        queue_publish = Queue(name=queue_name, exchange=exchange, routing_key=queue_routing_key, message_ttl=20)
-
-        conn.ensure_connection()
-        with Producer(conn) as producer:
-            producer.publish(
-                json.dumps(message),
-                exchange=exchange.name,
-                routing_key=routing_key,
-                declare=[queue_publish],
-                retry=True
-            )
-
     def run(self):
-        queue_notification = Queue(name='collector.request.notification', exchange=self.exchange,
-                                   routing_key='collector.request.notification', message_ttl=20)
-        queue_list_platforms = Queue(name='registry.response.collector.api_get_list_platforms', exchange=self.exchange,
-                                     routing_key='registry.response.collector.api_get_list_platforms', message_ttl=20)
-        queue_get_states = Queue(name='driver.response.collector.api_get_states', exchange=self.exchange,
-                                 routing_key='driver.response.collector.api_get_states', message_ttl=20)
 
+        info_consumers = [
+            {
+                'queue_name': 'collector.request.notification',
+                'routing_key': 'collector.request.notification',
+                'callback': self.handle_notification
+            },
+            {
+                'queue_name': 'registry.response.collector.api_get_list_platforms',
+                'routing_key': 'registry.response.collector.api_get_list_platforms',
+                'callback': self.handle_get_list
+
+            },
+            {
+                'queue_name': 'driver.response.collector.api_get_states',
+                'routing_key': 'driver.response.collector.api_get_states',
+                'callback': self.handle_collect_by_platform_id
+            }
+        ]
         self.get_list_platforms()
-
-        while 1:
-            try:
-                self.consumer_connection.ensure_connection(max_retries=1)
-                with nested(Consumer(self.consumer_connection, queues=queue_notification, callbacks=[self.handle_notification],
-                                     no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_list_platforms, callbacks=[self.handle_get_list],
-                                     no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_states,
-                                     callbacks=[self.handle_collect_by_platform_id])):
-                    while True:
-                        self.consumer_connection.drain_events()
-            except (ConnectionRefusedError, exceptions.OperationalError):
-                self.logger.error('Connection to Broker Cloud is lost')
-            except self.consumer_connection.connection_errors:
-                self.logger.error('Connection to Broker Cloud is error')
+        self.client_consumer_cloud.subscribe_message(info_consumers)
 
 
 if __name__ == '__main__':
-
     MODE_CODE = 'Develop'
     # MODE_CODE = 'Deploy'
 

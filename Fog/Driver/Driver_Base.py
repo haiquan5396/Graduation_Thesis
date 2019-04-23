@@ -1,31 +1,20 @@
-import paho.mqtt.client as mqtt
 import json
 import configparser
 import threading
-import logging
 from ast import literal_eval
 import os
 import copy
 import requests
 import time
+import Logging.config_logging as logging
+from Communicator.broker_fog import BrokerFogClient
+
+_LOGGER = logging.get_logger(__name__)
+
 
 class Driver:
 
     def __init__(self, config_path, time_push):
-        # ----->configure logging <-----
-        # if not os.path.exists('logging'):
-        #     os.makedirs('logging')
-        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
-        #                               backupCount=1)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
-                                      datefmt='%m-%d-%Y %H:%M:%S')
-        handler.setFormatter(formatter)
-        self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.DEBUG)
-        # -----> end configure logging <-----
-
         self.now_info = []
         self.now_metric_domain = {}     # 'local_id': 'metric_domain'
         self.list_mapping_id = {}       # 'local_id': 'global_id'
@@ -46,10 +35,7 @@ class Driver:
             self.metric_domain_file = json.load(json_file)
 
         broker_fog = config['BROKER']['host']
-        self.clientMQTT = mqtt.Client()
-        self.clientMQTT.connect(broker_fog)
-        self.clientMQTT.on_connect = self.on_connect
-        self.clientMQTT.on_disconnect = self.on_disconnect
+        self.clientMQTT = BrokerFogClient(broker_fog)
 
         registration = {
             "header": {},
@@ -62,11 +48,11 @@ class Driver:
         }
 
         if 'platform_id' in config['PLATFORM']:
-            self.logger.info("Platform have a platform_id")
+            _LOGGER.info("Platform have a platform_id")
             registration["header"]["registered"] = True
             registration["header"]["PlatformId"] = config['PLATFORM']['platform_id']
         else:
-            self.logger.info("Platform don't have a platform_id")
+            _LOGGER.info("Platform don't have a platform_id")
             registration["header"]["registered"] = False
 
         topic_response = 'registry/response/' + self.host + "/" + self.port
@@ -76,7 +62,7 @@ class Driver:
         def handle_init(client, userdata, msg):
 
             nonlocal check_response
-            self.logger.debug("Response from Registry "+str(json.loads(msg.payload.decode('utf-8'))))
+            _LOGGER.debug("Response from Registry "+str(json.loads(msg.payload.decode('utf-8'))))
             header = json.loads(msg.payload.decode('utf-8'))['header']
             body = json.loads(msg.payload.decode('utf-8'))['body']
             self.platform_id = header['PlatformId']
@@ -85,40 +71,52 @@ class Driver:
                     config['PLATFORM']['platform_id'] = self.platform_id
                     config.write(file)
 
-            self.logger.info('Platform_id: ' + self.platform_id)
+            _LOGGER.info('Platform_id: ' + self.platform_id)
             self.handle_info_from_registry(info_receive_from_registry=body['sources'], init_time=True)
-            self.clientMQTT.unsubscribe(topic_response)
+            self.clientMQTT.unsubscribe([topic_response])
             check_response = 1
 
-        self.clientMQTT.subscribe(topic_response)
-        self.clientMQTT.message_callback_add(topic_response, handle_init)
+        info_subscriber_init = [
+            {
+                'topic': topic_response,
+                'callback': handle_init
+            }
+        ]
 
-        self.logger.debug('Registration: ' + str(registration))
-        self.clientMQTT.publish('registry/request/api_add_platform', json.dumps(registration))
+        self.clientMQTT.subscribe_message(info_subscriber_init)
+        _LOGGER.debug('Registration: ' + str(registration))
+        self.clientMQTT.publish_message('registry/request/api_add_platform', json.dumps(registration))
         while self.platform_id is None or check_response == 0:
-            self.logger.debug("Wait for Registry response")
-            self.clientMQTT.loop()
+            _LOGGER.debug("Wait for Registry response")
+            self.clientMQTT.loop_one_time()
 
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
-
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_update_now_configuration')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_update_now_configuration', self.api_update_now_configuration)
-
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_platform_active')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_platform_active', self.check_platform_active)
-
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
-
-        self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state', qos=2)
-        self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
-        self.clientMQTT.unsubscribe(topic_response)
-        self.clientMQTT.message_callback_remove(topic_response)
+        info_subscribers = [
+            {
+                'topic': str(self.platform_id) + '/request/api_get_states',
+                'callback': self.api_get_states
+            },
+            {
+                'topic': str(self.platform_id) + '/request/api_update_now_configuration',
+                'callback': self.api_update_now_configuration
+            },
+            {
+                'topic': str(self.platform_id) + '/request/api_check_platform_active',
+                'callback': self.check_platform_active
+            },
+            {
+                'topic': str(self.platform_id) + '/request/api_check_configuration_changes',
+                'callback': self.api_check_configuration_changes
+            },
+            {
+                'topic': str(self.platform_id) + '/request/api_set_state',
+                'callback': self.api_set_state
+            }
+        ]
+        self.clientMQTT.subscribe_message(info_subscribers)
 
     def handle_info_from_registry(self, info_receive_from_registry, init_time=False):
         new_info = []
-        self.logger.debug('Information received from the Registry: {}'.format(info_receive_from_registry))
+        _LOGGER.debug('Information received from the Registry: {}'.format(info_receive_from_registry))
         for source in info_receive_from_registry:
             temp_source = {}
             self.list_mapping_id[source['information']['LocalId']] = source['information']['SourceId']
@@ -141,8 +139,11 @@ class Driver:
             temp_source['metrics'] = metrics
             new_info.append(temp_source)
         if init_time is False:
+            print("UPDATE: {}".format(self.now_info))
             self.now_info = new_info
         else:
+            print("INIT: {}".format(self.now_info))
+
             self.now_info = []
 
     def mapping_id(self, info, ids, is_config=True):
@@ -160,7 +161,7 @@ class Driver:
                     metric['MetricId'] = ids[metric['MetricLocalId']]
 
     def api_get_states(self, client, userdata, msg):
-        self.logger.info("API get states")
+        _LOGGER.info("API get states")
         message = json.loads(msg.payload.decode('utf-8'))
         states = self.get_states()
 
@@ -171,10 +172,10 @@ class Driver:
 
         self.mapping_id(states, copy.deepcopy(self.list_mapping_id), is_config=False)
         message_response['body']['states'] = states
-        self.clientMQTT.publish('driver/response/filter/api_get_states', json.dumps(message_response))
+        self.clientMQTT.publish_message('driver/response/filter/api_get_states', json.dumps(message_response))
 
     def api_check_configuration_changes(self, client, userdata, msg):
-        self.logger.info('API check configuration changes')
+        _LOGGER.info('API check configuration changes')
         message = json.loads(msg.payload.decode('utf-8'))
         message_response = {
             "header": message['header'],
@@ -184,13 +185,14 @@ class Driver:
         config = self.check_configuration_changes()
         self.mapping_id(config['new_info'], copy.deepcopy(self.list_mapping_id))
         message_response['body'] = config
-        self.clientMQTT.publish('driver/response/forwarder/api_check_configuration_changes', json.dumps(message_response))
+        self.clientMQTT.publish_message('driver/response/forwarder/api_check_configuration_changes', json.dumps(message_response))
 
     # This API is called when driver send configuration change
     # then registry response active_sources to driver for update now_configuration
     def api_update_now_configuration(self, client, userdata, msg):
+        print("VAOOOOOOOOOOOO")
         message = json.loads(msg.payload.decode('utf-8'))
-        self.logger.info("API update now configuration")
+        _LOGGER.info("API update now configuration")
         self.handle_info_from_registry(info_receive_from_registry=message['body']['active_sources'])
 
     def api_set_state(self, client, userdata, msg):
@@ -200,46 +202,8 @@ class Driver:
         metric_name = body['metric']['MetricName']
         metric_domain = body['metric']['MetricDomain']
         new_value = body['new_value']
-        self.logger.info("API set state: {} to {}".format(metric_name, new_value))
+        _LOGGER.info("API set state: {} to {}".format(metric_name, new_value))
         self.set_state(metric_local_id, metric_name, metric_domain, new_value)
-
-    def on_disconnect(self, client, userdata, rc):
-        if rc != 0:
-            self.logger.warning("Disconnected to BROKER_FOG.")
-
-    def on_connect(self, client, userdata, flags, rc):
-        self.logger.info("Connected to BROKER_FOG.")
-        if self.platform_id is not None:
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_get_states')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_get_states', self.api_get_states)
-
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_configuration_changes')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_configuration_changes', self.api_check_configuration_changes)
-
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_update_now_configuration')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_update_now_configuration',self.api_update_now_configuration)
-
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_check_platform_active')
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_check_platform_active', self.check_platform_active)
-
-            self.clientMQTT.subscribe(str(self.platform_id) + '/request/api_set_state', qos=2)
-            self.clientMQTT.message_callback_add(str(self.platform_id) + '/request/api_set_state', self.api_set_state)
-
-    def run(self):
-
-        thread_check_config= threading.Thread(target=self.push_configuration_changes)
-        thread_check_config.setDaemon(True)
-        thread_check_config.start()
-
-        thread_push_get_state= threading.Thread(target=self.push_get_state)
-        thread_push_get_state.setDaemon(True)
-        thread_push_get_state.start()
-
-        thread_push_check_active= threading.Thread(target=self.check_platform_active)
-        thread_push_check_active.setDaemon(True)
-        thread_push_check_active.start()
-
-        self.clientMQTT.loop_forever()
 
     def push_configuration_changes(self):
         # time.sleep(10)
@@ -255,13 +219,11 @@ class Driver:
                 message['header']['reply_to'] = 'driver.response.registry.api_check_configuration_changes'
                 message['header']['PlatformId'] = self.platform_id
                 message['header']['mode'] = "PUSH"
-                self.logger.info("Push to Registry info because have change")
-                self.logger.debug("Message: {}".format(message))
-
-                self.clientMQTT.publish('driver/response/forwarder/api_check_configuration_changes', json.dumps(message))
+                _LOGGER.info("Push to Registry info because have change")
+                self.clientMQTT.publish_message('driver/response/forwarder/api_check_configuration_changes', json.dumps(message))
             else:
-                self.logger.info("Don't push to Registry info because no change")
-                self.logger.debug("Message: {}".format(message))
+                _LOGGER.info("Don't push to Registry info because no change")
+                _LOGGER.debug("Message: {}".format(message))
             time.sleep(self.time_push_config)
 
     def push_get_state(self):
@@ -276,8 +238,8 @@ class Driver:
             message['header']['mode'] = "PUSH"
             self.mapping_id(states, copy.deepcopy(self.list_mapping_id), is_config=False)
             message['body']['states'] = states
-            self.logger.debug("Push state to Filter")
-            self.clientMQTT.publish('driver/response/filter/api_get_states', json.dumps(message))
+            _LOGGER.debug("Push state to Filter")
+            self.clientMQTT.publish_message('driver/response/filter/api_get_states', json.dumps(message))
             time.sleep(2)
 
     def get_states(self):
@@ -299,20 +261,18 @@ class Driver:
         }
 
         if driver_id is None:
-            self.logger.info("Platform don't have a PlatformId")
+            _LOGGER.info("Platform don't have a PlatformId")
             registration["header"]["registered"] = False
         else:
-            self.logger.info("Platform have a PlatformId")
+            _LOGGER.info("Platform have a PlatformId")
             registration["header"]["registered"] = True
             registration["header"]["DriverId"] = driver_id
 
         return registration
 
     def check_platform_active(self):
-        # time.sleep(10)
         while 1:
-
-            # body = json.loads(msg.payload.decode('utf-8'))
+            _LOGGER.debug('Check platform active and send to Registry')
             message = {
                 "header": {
                     'PlatformId': self.platform_id,
@@ -325,13 +285,12 @@ class Driver:
                 response = requests.get('http://' + self.host + ':' + self.port)
                 if response.status_code == 200:
                     message['body']['active'] = True
-                    self.clientMQTT.publish('driver/response/forwarder/api_check_platform_active', json.dumps(message))
-                    self.logger.debug('Check platform active and send to Registry')
+                    self.clientMQTT.publish_message('driver/response/forwarder/api_check_platform_active', json.dumps(message))
                 else:
-                    self.logger.debug('Check platform active and realize it inactive')
+                    _LOGGER.debug('Check platform active and realize it inactive')
                     pass
             except:
-                self.logger.debug('Check platform active and raise exception')
+                _LOGGER.debug('Check platform active and raise exception')
                 pass
             time.sleep(20)
 
@@ -410,3 +369,19 @@ class Driver:
             return sorted(self.ordered(x) for x in obj)
         else:
             return obj
+
+    def run(self):
+
+        thread_push_check_active= threading.Thread(target=self.check_platform_active)
+        thread_push_check_active.setDaemon(True)
+        thread_push_check_active.start()
+
+        thread_push_get_state= threading.Thread(target=self.push_get_state)
+        thread_push_get_state.setDaemon(True)
+        thread_push_get_state.start()
+
+        thread_check_config= threading.Thread(target=self.push_configuration_changes)
+        thread_check_config.setDaemon(True)
+        thread_check_config.start()
+
+        self.clientMQTT.loop(loop_forever=True)

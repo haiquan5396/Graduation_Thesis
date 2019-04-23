@@ -1,14 +1,19 @@
-from kombu import Connection, Producer, Consumer, Queue, uuid, Exchange
 import json
 import sys
-import socket
 import datetime
 import os
+from builtins import range
 from flask_cors import CORS
 import paramiko
-sys.path.append('../../')
-from Performance_Monitoring.message_monitor_new_model import MessageMonitor
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+# print(sys.path)
+from Communicator.broker_cloud import BrokerCloudClient
+# Run a test server.
+from flask import jsonify, request
+from Cloud.API.app import app
+# sys.path.append('../../')
 import time
+
 MODE_CODE = "Develop"
 # MODE_CODE = "Deploy"
 
@@ -17,9 +22,7 @@ if MODE_CODE == "Deploy":
 else:
     BROKER_CLOUD = "0.0.0.0"
 
-message_monitor = MessageMonitor('0.0.0.0', 8086)
-rabbitmq_connection = Connection(BROKER_CLOUD)
-exchange = Exchange("IoT", type="direct")
+rabbitmq_connection = BrokerCloudClient(BROKER_CLOUD, 'IoT', 'direct')
 
 my_path = os.path.dirname(__file__)
 filename = os.path.join(my_path, '../../Semantic_Analysis/metric_domain.json')
@@ -28,9 +31,7 @@ with open(filename) as json_file:
     metric_domain_file = json.load(json_file)
 
 #=====================================================
-from flask import Flask, jsonify, request
 
-app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
@@ -134,7 +135,6 @@ def api_add_platform():
     return jsonify(add_platform(ssh_host, user_name, password, platform_host, platform_port, platform_name, platform_type, broker_fog))
 
 
-
 # prevent cached responses
 @app.after_request
 def add_header(response):
@@ -225,10 +225,7 @@ def add_platform(ssh_host, user_name, password, platform_host, platform_port, pl
         "add_platform": "done"
     }
 
-
-
 # add_platform("192.168.60.199", "pi", "raspberry", "platform_host", "platform_port", "platform_name", "platform_type", "broker_fog")
-
 
 
 def get_sources_history(start_time, end_time, scale, source_status=None, metric_status=None, platform_id=None, source_id=None):
@@ -291,7 +288,7 @@ def get_metric_state_history(list_metric_id, start_time, end_time, scale):
 
     # request to api_get_things of Registry
     request_routing_key = 'dbreader.request.api_get_metric_history'
-    message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
+    message_response = rabbitmq_connection.request_service(message_request, request_routing_key)
 
     # message_response = {"items": [{'item_global_id': "", 'item_state': "", 'last_changed': ""}]}
     return message_response['body']['metrics']
@@ -309,7 +306,7 @@ def get_list_platforms(platform_status):
 
         # request to api_get_list_platform of Registry
         request_routing_key = 'registry.request.api_get_list_platforms'
-        message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
+        message_response = rabbitmq_connection.request_service(message_request, request_routing_key)
         print(message_response)
         if 'list_platforms' in message_response['body']:
             return message_response['body']['list_platforms']
@@ -345,7 +342,7 @@ def get_sources_info(source_status=None, metric_status=None, platform_id=None, s
         # print(message_request)
         # request to api_get_things of Registry
         request_routing_key = 'registry.request.api_get_sources'
-        message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
+        message_response = rabbitmq_connection.request_service(message_request, request_routing_key)
         # print(message_response)
         return message_response['body']['sources']
     else:
@@ -379,7 +376,7 @@ def get_metric_state(list_metric_id):
     }
     # request to api_get_things of Registry
     request_routing_key = 'dbreader.request.api_get_metric'
-    message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
+    message_response = rabbitmq_connection.request_service(message_request, request_routing_key)
     # message_response = {"items": [{'item_global_id': "", 'item_state': "", 'last_changed': ""}]}
     return message_response['body']["metrics"]
 
@@ -448,59 +445,13 @@ def set_state(header, source_id, metric_id, new_value):
                 # message_response = request_service(rabbitmq_connection, message_request, exchange, request_routing_key)
                 # # message_response = {"items": [{'item_global_id': "", 'item_state': "", 'last_changed': ""}]}
                 # return message_response
-                rabbitmq_connection.ensure_connection()
-                with Producer(rabbitmq_connection) as producer:
-                    producer.publish(
-                        json.dumps(message_request),
-                        exchange=exchange.name,
-                        routing_key=request_routing_key,
-                        retry=True
-                    )
-
+                rabbitmq_connection.publish_messages(message_request, request_routing_key)
                 return "Public set state"
 
             else:
                 return {
                     'error': 'MetricDomain can not set state'
                 }
-
-
-def request_service(conn, message_request, exchange_request, request_routing_key):
-    id_response = uuid()
-    queue_response = Queue(name=id_response, exchange=exchange_request, routing_key=id_response, exclusive=True, auto_delete=True)
-    message_request['header']['reply_to'] = id_response
-    conn.ensure_connection()
-    with Producer(conn) as producer:
-        producer.publish(
-            json.dumps(message_request),
-            exchange=exchange_request.name,
-            routing_key=request_routing_key,
-            declare=[queue_response],
-            retry=True
-        )
-
-    message_response = None
-
-    def on_response(body, message):
-        nonlocal message_response
-        message_response = json.loads(body)
-    try:
-
-        with Consumer(conn, queues=queue_response, callbacks=[on_response], no_ack=True):
-            try:
-                while message_response is None:
-                    conn.drain_events(timeout=10)
-            except socket.timeout:
-                return {
-                    'error': 'Can not connect to service'
-                }
-    except Exception:
-        print("cannot create Consumer: " + request_routing_key)
-        return {
-            'error': 'Cannot create Consumer'
-        }
-
-    return message_response
 
 
 if __name__ == '__main__':

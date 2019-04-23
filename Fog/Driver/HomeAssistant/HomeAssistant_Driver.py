@@ -3,23 +3,18 @@ import requests
 import hashlib
 import time
 from Fog.Driver.Driver_Base import Driver
-import sys
-import logging
+import Logging.config_logging as logging
+
+
+_LOGGER = logging.get_logger(__name__)
 
 
 class HomeAssistant(Driver):
     def __init__(self, config_path, time_push):
-
-        # logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG, datefmt='%m-%d-%Y %H:%M:%S')
         Driver.__init__(self, config_path, time_push)
 
     def get_states(self):
-        # self.logger.debug('Get state of all things')
         url = 'http://' + self.host + ':' + self.port + '/api/states'
-        message = {
-            "header": {},
-            "body": {}
-        }
         response = self.connect_platform(url)
         states = []
 
@@ -47,8 +42,6 @@ class HomeAssistant(Driver):
         return states
 
     def check_configuration_changes(self):
-        # self.logger.debug('Check for configuration')
-
         url = 'http://' + self.host + ':' + self.port + '/api/states'
         response = self.connect_platform(url)
 
@@ -105,18 +98,18 @@ class HomeAssistant(Driver):
         hash_now = hashlib.md5(str(self.ordered(new_info)).encode())
         hash_pre = hashlib.md5(str(self.ordered(self.now_info)).encode())
 
-        # print("new_info: {}".format(new_info))
-        # print("now_info: {}".format(self.now_info))
+        print("new_info: {}".format(new_info))
+        print("now_info: {}".format(self.now_info))
 
         if hash_now.hexdigest() == hash_pre.hexdigest():
-            self.logger.debug("Configuration don't change")
+            _LOGGER.debug("Configuration don't change")
             return {
                 'is_change': False,
                 'new_info': new_info,
             }
 
         else:
-            self.logger.debug("Configuration have change")
+            _LOGGER.debug("Configuration have change")
             return {
                 'is_change': True,
                 'new_info': new_info
@@ -129,7 +122,7 @@ class HomeAssistant(Driver):
                 response = requests.get(url).json()
                 return response
             except:
-                self.logger.error("Error connect to Platform")
+                _LOGGER.error("Error connect to Platform")
                 time.sleep(2)
                 continue
 
@@ -144,7 +137,7 @@ class HomeAssistant(Driver):
                 data = {"entity_id": metric_local_id}
                 response = requests.post(url, json.dumps(data))
         else:
-            self.logger.error("Don't support {} set new_value: {}".format(metric_name, new_value))
+            _LOGGER.error("Don't support {} set new_value: {}".format(metric_name, new_value))
 
 
 if __name__ == '__main__':

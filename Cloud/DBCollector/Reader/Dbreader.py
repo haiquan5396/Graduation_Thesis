@@ -1,36 +1,22 @@
 import json
-from kombu import Producer, Connection, Consumer, exceptions, Exchange, Queue
-from kombu.utils.compat import nested
 from influxdb import InfluxDBClient
 import sys
-import logging
+import Logging.config_logging as logging
+from Communicator.broker_cloud import BrokerCloudClient
+
+_LOGGER = logging.get_logger(__name__)
 
 
 class Dbreader:
     def __init__(self, broker_cloud, host_influxdb):
-        # ----->configure logging <-----
-        # if not os.path.exists('logging'):
-        #     os.makedirs('logging')
-        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
-        #                               backupCount=1)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
-                                      datefmt='%m-%d-%Y %H:%M:%S')
-        handler.setFormatter(formatter)
-        self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.DEBUG)
-        # -----> end configure logging <-----
-
         self.clientDB = InfluxDBClient(host_influxdb, 8086, 'root', 'root', 'Collector_DB')
         self.clientDB.create_database('Collector_DB')
 
-        self.producer_connection = Connection(broker_cloud)
-        self.consumer_connection = Connection(broker_cloud)
-        self.exchange = Exchange("IoT", type="direct")
+        self.client_producer_cloud = BrokerCloudClient(broker_cloud, 'IoT', 'direct')
+        self.client_consumer_cloud = BrokerCloudClient(broker_cloud, 'IoT', 'direct')
 
     def api_get_metric(self, body, message):
-        self.logger.info("API get metric")
+        _LOGGER.info("API get metric")
         list_metric_id = json.loads(body)['body']["list_metric_id"]
         reply_to = json.loads(body)['header']['reply_to']
         metrics = self.get_data_metric(list_metric_id)
@@ -40,10 +26,10 @@ class Dbreader:
                 "metrics": metrics
             }
         }
-        self.publish_messages(message_response, self.producer_connection, reply_to, self.exchange)
+        self.client_producer_cloud.publish_messages(message_response, reply_to)
 
     def api_get_metric_history(self, body, message):
-        self.logger.info("API get metric history")
+        _LOGGER.info("API get metric history")
         list_metric_id = json.loads(body)['body']["list_metric_id"]
         reply_to = json.loads(body)['header']['reply_to']
         start_time = json.loads(body)['body']["start_time"]
@@ -57,7 +43,7 @@ class Dbreader:
             }
         }
 
-        self.publish_messages(message_response, self.producer_connection, reply_to, self.exchange)
+        self.client_producer_cloud.publish_messages(message_response, reply_to)
 
     def get_data_metric(self, list_metric_id):
         metrics = []
@@ -179,43 +165,20 @@ class Dbreader:
 
         return metrics
 
-    def publish_messages(self, message, conn, queue_name, exchange, routing_key=None, queue_routing_key=None):
-        self.logger.debug("Message publish to queue {}: {}".format(queue_name, message))
-        if queue_routing_key is None:
-            queue_routing_key = queue_name
-        if routing_key is None:
-            routing_key = queue_name
-
-        # queue_publish = Queue(name=queue_name, exchange=exchange, routing_key=queue_routing_key, message_ttl=20)
-
-        conn.ensure_connection()
-        with Producer(conn) as producer:
-            producer.publish(
-                json.dumps(message),
-                exchange=exchange.name,
-                routing_key=routing_key,
-                retry=True
-            )
-
     def run(self):
-
-        queue_get_metric = Queue(name='dbreader.request.api_get_metric', exchange=self.exchange,
-                                     routing_key='dbreader.request.api_get_metric', message_ttl=20)
-        queue_get_metric_history = Queue(name='dbreader.request.api_get_metric_history', exchange=self.exchange,
-                                             routing_key='dbreader.request.api_get_metric_history', message_ttl=20)
-        while 1:
-            try:
-                self.consumer_connection.ensure_connection(max_retries=1)
-                with nested(Consumer(self.consumer_connection, queues=queue_get_metric, callbacks=[self.api_get_metric],
-                                     no_ack=True),
-                            Consumer(self.consumer_connection, queues=queue_get_metric_history,
-                                     callbacks=[self.api_get_metric_history], no_ack=True)):
-                    while True:
-                        self.consumer_connection.drain_events()
-            except (ConnectionRefusedError, exceptions.OperationalError):
-                self.logger.error('Connection to Broker Cloud is lost')
-            except self.consumer_connection.connection_errors:
-                self.logger.error('Connection to Broker Cloud is error')
+        info_consumers = [
+            {
+                'queue_name': 'dbreader.request.api_get_metric',
+                'routing_key': 'dbreader.request.api_get_metric',
+                'callback': self.api_get_metric
+            },
+            {
+                'queue_name': 'dbreader.request.api_get_metric_history',
+                'routing_key': 'dbreader.request.api_get_metric_history',
+                'callback': self.api_get_metric_history
+            }
+        ]
+        self.client_consumer_cloud.subscribe_message(info_consumers)
 
 
 if __name__ == '__main__':

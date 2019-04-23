@@ -1,41 +1,22 @@
 import json
-import paho.mqtt.client as mqtt
 import sys
 import copy
-import logging
+from Communicator.broker_fog import BrokerFogClient
+import Logging.config_logging as logging
+
+_LOGGER = logging.get_logger(__name__)
 
 
 class Filter:
     def __init__(self, broker_fog):
-        # ----->configure logging <-----
-        # if not os.path.exists('logging'):
-        #     os.makedirs('logging')
-        # handler = logging.handlers.RotatingFileHandler('logging/driver.log', maxBytes=200,
-        #                               backupCount=1)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(fmt='[%(asctime)s - %(levelname)s - %(name)s] - %(message)s',
-                                      datefmt='%m-%d-%Y %H:%M:%S')
-        handler.setFormatter(formatter)
-        self.logger = logging.getLogger(__name__)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.DEBUG)
-        # -----> end configure logging <-----
-
-        self.client = mqtt.Client()
-        self.client.connect(broker_fog)
+        # create connection to Broker_Fog
+        self.client_fog = BrokerFogClient(broker_fog)
         self.now_state = {}         # {global_id : value_state}
 
-    def on_connect(self, client, userdata, flags, rc):
-        self.logger.info("Connected to Mosquitto")
-        filter_topic_sub = 'driver/response/filter/api_get_states'
-        self.client.subscribe(filter_topic_sub)
-
     def filter_message(self, client, userdata, msg):
-        self.logger.info("Filter message before send to Collector")
         filter_topic_pub = 'filter/response/forwarder/api_get_states'
         message = json.loads(msg.payload.decode('utf-8'))
-        self.logger.debug("Meassage before: {}".format(message))
-        # self.client.publish(filter_topic_pub, json.dumps(message))
+        # self.logger.debug("Meassage before: {}".format(message))
 
         received_state = message['body']['states']
         filter_states = copy.deepcopy(received_state)
@@ -57,15 +38,20 @@ class Filter:
                 filter_states.remove(state)
         if len(filter_states) > 0:
             message['body']['states'] = filter_states
-            self.logger.debug("Message after: {}".format(message))
-            self.client.publish(filter_topic_pub, json.dumps(message))
+            _LOGGER.info("Send filtered metric to Collector")
+            self.client_fog.publish_message(filter_topic_pub, json.dumps(message))
         else:
-            self.logger.debug("Filter the messages and don't send to Collector ")
+            _LOGGER.debug("Filter the messages and don't send to Collector ")
 
     def run(self):
-        self.client.on_connect = self.on_connect
-        self.client.on_message = self.filter_message
-        self.client.loop_forever()
+        info_subscribers = [
+            {
+                'topic': 'driver/response/filter/api_get_states',
+                'callback': self.filter_message
+            }
+        ]
+        self.client_fog.subscribe_message(info_subscribers)
+        self.client_fog.loop(loop_forever=True)
 
 
 if __name__ == '__main__':
